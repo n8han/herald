@@ -7,14 +7,14 @@ import com.tristanhunt.knockoff.DefaultDiscounter._
 import scala.xml.Node
 
 trait Post extends BasicDependencyProject with FileTasks {
-  def posterousCredentials = Path.userHome / ".posterous"
-  private lazy val posterousProperties = {
+  def posterousCredentialsPath = Path.userHome / ".posterous"
+  private def getPosterousProperty(name: String) = {
     val props = new java.util.Properties
-    props.load(new java.io.FileInputStream(posterousCredentials.asFile))
-    props
+    props.load(new java.io.FileInputStream(posterousCredentialsPath.asFile))
+    props.getProperty(name, "")
   }
-  def posterousUsername = posterousProperties.getProperty("email")
-  def posterousPassword = posterousProperties.getProperty("password")
+  def posterousEmail = getPosterousProperty("email")
+  def posterousPassword = getPosterousProperty("password")
   
   /** Posterous site id, defaults to implicit.ly */
   def postSiteId = 1031779
@@ -34,24 +34,44 @@ trait Post extends BasicDependencyProject with FileTasks {
   def postBody = postBodyTxts flatMap txtToXml
   def postSource = "<a href='http://github.com/n8han/posterous-sbt'>posterous-sbt plugin</a>"
 
+  def missing(path: Path, title: String) =
+    Some(path) filter (!_.exists) map { ne =>
+      "Missing %s, expected in %s" format (title, path)
+    }
+
+  def missing(str: String, path: Path, title: String) = 
+    Some(str) filter { _ == "" } map { str =>
+      "Missing value %s in %s" format (title, path)
+    }
+
   lazy val publishNotes = publishNotesAction
   def publishNotesAction = task {
-    val api = :/("posterous.com").secure / "api" as_! (posterousUsername, posterousPassword)
-    val post = api / "newpost" << Map(
-        "site_id" -> postSiteId,
-        "title" -> postTitle,
-        "tags" -> postTags.map { _.replace(",","_") }.removeDuplicates.mkString(","),
-        "body" -> postBody.mkString,
-        "source" -> postSource
-      )
-    (new Http)(post <> { rsp =>
-      rsp \ "post" \ "url" foreach { url =>
-        log.success("Posted release notes: " + url.text)
-        tryBrowse(new URI(url.text))
+    ( missing(versionNotesPath, "release notes file")
+    ) orElse { missing(posterousCredentialsPath, "credentials file")
+    } orElse { missing(posterousEmail, posterousCredentialsPath, "email")
+    } orElse { missing(posterousPassword, posterousCredentialsPath, "password")
+    } orElse {
+      val api = :/("posterous.com").secure / "api" as_! (posterousEmail, posterousPassword)
+      val post = api / "newpost" << Map(
+          "site_id" -> postSiteId,
+          "title" -> postTitle,
+          "tags" -> postTags.map { _.replace(",","_") }.removeDuplicates.mkString(","),
+          "body" -> postBody.mkString,
+          "source" -> postSource
+        )
+      try {
+        (new Http)(post <> { rsp =>
+          rsp \ "post" \ "url" foreach { url =>
+            log.success("Posted release notes: " + url.text)
+            tryBrowse(new URI(url.text))
+          }
+        })
+        None
+      } catch {
+        case e: StatusCode => Some(e.getMessage)
       }
-    })
-    None
-  }
+    }
+  } describedAs ("Publish project release notes to Posterous")
   def notesOutputPath = outputPath / ("%s-notes.html" format artifactBaseName)
   lazy val previewNotes = previewNotesAction
   def previewNotesAction = task {
