@@ -6,7 +6,7 @@ import java.net.URI
 import com.tristanhunt.knockoff.DefaultDiscounter._
 import scala.xml.Node
 
-trait Publish extends BasicDependencyProject with FileTasks {
+trait Publish extends BasicDependencyProject {
   def posterousCredentialsPath = Path.userHome / ".posterous"
   private def getPosterousProperty(name: String) = {
     val props = new java.util.Properties
