@@ -43,15 +43,6 @@ trait Publish extends BasicDependencyProject {
   /** Agent that is posting to Posterous (this plugin) */
   def postSource = <a href="http://github.com/n8han/posterous-sbt">posterous-sbt plugin</a>
   
-  /** Appends a task that calls publishNotes_! if release notes are present */
-  override def publishAction = super.publishAction && task {
-    if (versionNotesPath.exists) publishNotes_!
-    else {
-      log.warn("No release notes to publish, expected: " + versionNotesPath)
-      None
-    }
-  }
-  
   def missing(path: Path, title: String) =
     Some(path) filter (!_.exists) map { ne =>
       "Missing %s, expected in %s" format (title, path)
