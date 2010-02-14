@@ -18,8 +18,10 @@ trait Publish extends BasicDependencyProject {
   
   /** Posterous site id, defaults to implicit.ly */
   def postSiteId = 1031779
-  /** Strings to tag the post with, defaults to the project name, organization, and Scala build versions */
-  def postTags = name :: organization :: crossScalaVersions.map { "Scala " + _ }.toList
+  /** Subjective tags for the release notes post, e.g. a Scala library this project uses. */
+  def extraTags: List[String] = Nil
+  /** Strings to tag the post with, defaults to the project name, organization, extraTags, and Scala build versions */
+  def postTags = name :: organization :: extraTags ::: crossScalaVersions.map { "Scala " + _ }.toList
   /** Title defaults to name and version */
   def postTitle = "%s %s".format(name, version)
   /** Path to release notes and text about project. */
