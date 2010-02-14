@@ -10,7 +10,7 @@ trait Publish extends BasicDependencyProject {
   def posterousCredentialsPath = Path.userHome / ".posterous"
   private def getPosterousProperty(name: String) = {
     val props = new java.util.Properties
-    props.load(new java.io.FileInputStream(posterousCredentialsPath.asFile))
+    FileUtilities.readStream(posterousCredentialsPath.asFile, log){ input => props.load(input); None }
     props.getProperty(name, "")
   }
   def posterousEmail = getPosterousProperty("email")
@@ -24,11 +24,12 @@ trait Publish extends BasicDependencyProject {
   def postTitle = "%s %s".format(name, version)
   /** Path to release notes and text about project. */
   def notesPath = path("notes")
-  override def watchPaths = super.watchPaths +++ (notesPath * "*.txt")
-  /** Release notes named with the version and a txt suffix. */
-  def versionNotesPath = notesPath / (version + ".txt")
-  /** Project info named about.txt. */
-  def aboutNotesPath = notesPath / "about.txt"
+  override def watchPaths = super.watchPaths +++ (notesPath * ("*" + extension))
+  def extension = ".markdown"
+  /** Release notes named with the version and a .markdown suffix. */
+  def versionNotesPath = notesPath / (version + extension)
+  /** Project info named about.markdown. */
+  def aboutNotesPath: Path = "about" + extension
   /** Paths to text files to be converted to xml, concatenated, and published. */
   def postBodyTxts = versionNotesPath :: aboutNotesPath :: Nil
   /** @return node sequence from file or Nil if file is not found. */
@@ -65,10 +66,11 @@ trait Publish extends BasicDependencyProject {
   def publishNotesAction = task { publishNotes_! } describedAs ("Publish project release notes to Posterous.")
 
   /** @returns Some(error) if a note publishing requirement is not met */
-  def publishNotesReqs = ( missing(versionNotesPath, "release notes file")
+  def publishNotesReqs = ( localNotesReqs
     ) orElse { missing(posterousCredentialsPath, "credentials file")
     } orElse { missing(posterousEmail, posterousCredentialsPath, "email")
     } orElse { missing(posterousPassword, posterousCredentialsPath, "password") }
+  def localNotesReqs = missing(versionNotesPath, "release notes file")
     
   def publishNotes_! =
     publishNotesReqs orElse {
@@ -84,7 +86,7 @@ trait Publish extends BasicDependencyProject {
         (new Http)(post <> { rsp =>
           rsp \ "post" \ "url" foreach { url =>
             log.success("Posted release notes: " + url.text)
-            tryBrowse(new URI(url.text))
+            tryBrowse(new URI(url.text), true) // ignore any error if not 1.6
           }
         })
         None
@@ -96,24 +98,22 @@ trait Publish extends BasicDependencyProject {
   /** Where notes are saved for previewing */
   def notesOutputPath = outputPath / ("%s-notes.html" format artifactBaseName)
   lazy val previewNotes = previewNotesAction
-  def previewNotesAction = task { publishNotesReqs orElse {
-    FileUtilities.write(notesOutputPath.asFile, log) { writer =>
-      writer.write(<html> { postBody } </html> toString)
-      None
-    } orElse {
+  def previewNotesAction = task { localNotesReqs orElse {
+    FileUtilities.write(notesOutputPath.asFile, <html> { postBody } </html> toString, log) orElse {
       log.success("Saved release notes: " + notesOutputPath)
-      tryBrowse(notesOutputPath.asFile.toURI)
-      None
+      tryBrowse(notesOutputPath.asFile.toURI, false)
     }
   } } describedAs ("Preview project release notes as HTML and check for publishing credentials.")
   
   /** Opens uri in a browser if on a JVM 1.6+ */
-  def tryBrowse(uri: URI) { 
+  def tryBrowse(uri: URI, quiet: Boolean) = {
     try {
       val dsk = Class.forName("java.awt.Desktop")
       dsk.getMethod("browse", classOf[java.net.URI]).invoke(
         dsk.getMethod("getDesktop").invoke(null), uri
       )
-    } catch { case _ => () }
+      None
+    } catch { case e => if(quiet) None else Some("Error trying to preview notes:\n\t" + rootCause(e).toString) }
   }
+  private def rootCause(e: Throwable): Throwable = if(e.getCause eq null) e else rootCause(e.getCause)
 }
