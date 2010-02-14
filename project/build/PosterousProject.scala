@@ -8,5 +8,6 @@ class PosterousProject(info: ProjectInfo) extends PluginProject(info) {
   val knockoff = "com.tristanhunt" %% "knockoff" % "0.6.1-8"
 
   override def managedStyle = ManagedStyle.Maven
-  lazy val publishTo = Resolver.file("Databinder Repository", new java.io.File("/var/dbwww/repo"))
+  val publishTo = "Scala Tools Nexus" at "http://nexus.scala-tools.org/content/repositories/releases/"
+  Credentials(Path.userHome / ".ivy2" / ".credentials", log)
 }
