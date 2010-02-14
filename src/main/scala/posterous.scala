@@ -31,15 +31,15 @@ trait Publish extends BasicDependencyProject {
   /** Project info named about.markdown. */
   def aboutNotesPath: Path = "about" + extension
   /** Paths to text files to be converted to xml, concatenated, and published. */
-  def postBodyTxts = versionNotesPath :: aboutNotesPath :: Nil
+  def postBodySources = versionNotesPath :: aboutNotesPath :: Nil
   /** @return node sequence from file or Nil if file is not found. */
-  def txtToXml(txt: Path) =
-    if (txt.exists)
-      toXML(knockoff(scala.io.Source.fromFile(txt.asFile).mkString))
+  def mdToXml(md: Path) =
+    if (md.exists)
+      toXML(knockoff(scala.io.Source.fromFile(md.asFile).mkString))
     else
       Nil
-  /** Content to post, transforms postBodyTxts to xml and concatenates */
-  def postBody = postBodyTxts flatMap txtToXml
+  /** Content to post, transforms postBodySources to xml and concatenates */
+  def postBody = postBodySources flatMap mdToXml
   /** Agent that is posting to Posterous (this plugin) */
   def postSource = <a href="http://github.com/n8han/posterous-sbt">posterous-sbt plugin</a>
   
