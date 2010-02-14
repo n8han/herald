@@ -57,34 +57,53 @@ trait Publish extends BasicDependencyProject {
   def publishNotesAction = task { publishNotes_! } describedAs ("Publish project release notes to Posterous.")
 
   /** @returns Some(error) if a note publishing requirement is not met */
-  def publishNotesReqs = ( localNotesReqs
-    ) orElse { missing(posterousCredentialsPath, "credentials file")
-    } orElse { missing(posterousEmail, posterousCredentialsPath, "email")
+  def publishNotesReqs = localNotesReqs orElse credentialReqs
+  def credentialReqs = ( missing(posterousCredentialsPath, "credentials file")
+    ) orElse { missing(posterousEmail, posterousCredentialsPath, "email")
     } orElse { missing(posterousPassword, posterousCredentialsPath, "password") }
   def localNotesReqs = missing(versionNotesPath, "release notes file")
-    
+  
+  def posterousApi = :/("posterous.com").secure / "api" as_! (posterousEmail, posterousPassword)
+  def http(block: Http => Option[String]) = try {
+    block(new Http)
+  } catch {
+    case e: StatusCode => Some(e.getMessage)
+  }
+  
   def publishNotes_! =
     publishNotesReqs orElse {
-      val api = :/("posterous.com").secure / "api" as_! (posterousEmail, posterousPassword)
-      val post = api / "newpost" << Map(
-          "site_id" -> postSiteId,
-          "title" -> postTitle,
-          "tags" -> postTags.map { _.replace(",","_") }.removeDuplicates.mkString(","),
-          "body" -> postBody.mkString,
-          "source" -> postSource
-        )
-      try {
-        (new Http)(post <> { rsp =>
-          rsp \ "post" \ "url" foreach { url =>
+      val newpost = posterousApi / "newpost" << Map(
+        "site_id" -> postSiteId,
+        "title" -> postTitle,
+        "tags" -> postTags.map { _.replace(",","_") }.removeDuplicates.mkString(","),
+        "body" -> postBody.mkString,
+        "source" -> postSource
+      )
+      http { _(newpost <> { rsp =>
+        (rsp \ "post" \ "url").firstOption match {
+          case None => Some("No post URL found in response:\n" + rsp.mkString)
+          case Some(url) =>
             log.success("Posted release notes: " + url.text)
             tryBrowse(new URI(url.text), true) // ignore any error if not 1.6
-          }
-        })
-        None
-      } catch {
-        case e: StatusCode => Some(e.getMessage)
-      }
+        }
+      }) }
     }
+
+  lazy val checkPosterous = checkPosterousAction
+  def checkPosterousAction = task { credentialReqs orElse {
+    http { _(posterousApi / "getsites" <> { rsp =>
+      log.info("%s contributes to the following sites:" format posterousEmail)
+      for (site <- rsp \ "site"; id <- site \ "id"; name <- site \ "name")
+        log.info("  %-10s%s" format (id.text, name.text))
+      
+      rsp \ "site" \ "id" filter { _.text == postSiteId.toString } match {
+        case ids if ids.isEmpty => Some("You are not authorized to contribute to %d, this project's postSiteId." format postSiteId)
+        case _ => 
+          log.success("You may contribute to %d, this project's postSiteId." format postSiteId)
+          None
+      }
+    }) }
+  } } describedAs ("Check Posterous credentials and permissions for the current postSiteId.")
 
   /** Where notes are saved for previewing */
   def notesOutputPath = outputPath / ("%s-notes.html" format artifactBaseName)
