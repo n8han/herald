@@ -1,6 +1,6 @@
 Initial release:
 
-* Publication of current release notes from notes/
+* Publication of current release notes from `notes/`
 * Append notes/about.markdown for linking back to project home
 * Preview release notes in a browser
 * Check publishing credentials
