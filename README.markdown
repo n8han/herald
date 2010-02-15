@@ -45,7 +45,9 @@ Once you've done that, you can check your setup with the `check-posterous` actio
 Publishing a Release
 --------------------
 
-Once you've previewed your source notes and checked your publishing authorization, you're ready to post to the web. Like the `preview-notes` action, `publish-notes` defaults to the current non-snapshot version which you can override by following the command with a version number. If publication is successful, the shortened published URL is displayed and will open in the default broswer on 1.6+ JVMs. *Hello, world!*
+Once you've previewed your source notes and checked your publishing authorization, you're ready to post to the web. Like the `preview-notes` action, `publish-notes` defaults to the current non-snapshot version which you can override by following the command with a version number.
+
+If the release notes publication is successful, the shortened published URL is displayed and will open in the default broswer on 1.6+ JVMs. *Hello, world!*
 
 [posterous-sbt]: http://github.com/n8han/posterous-sbt
 [simple-build-tool]: http://code.google.com/p/simple-build-tool/
