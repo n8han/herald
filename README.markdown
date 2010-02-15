@@ -28,7 +28,7 @@ When publishing and previewing, the description from `about.markdown` is appende
 
 If you're publishing to the Scala software announcement site [implicit.ly], please keep in mind that the post's title will be the name of your project and its corresponding version: these should not be repeated as a heading in the notes. It is best to lead with copy describing the big changes in your release, or jump right into a list of those changes. For major releases with changes divided into sections, use an `h3` (a line prefixed by `###` in Markdown) or smaller heading. The short description `about.markdown` should be one or two sentences long, with links to more information about your project.
 
-To preview the transformed release notes, run the `preview-notes` action in sbt. This can be followed by a version number; the default is the current version with any "-SNAPSHOT" suffix removed. If you're on a 1.6+ JVM, the notes should open in your default browser. The location of the file they've been saved to is displayed in the sbt output.
+To preview the transformed release notes, run the `preview-notes` action in sbt. This can be followed by a version number, e.g. `preview-notes 1.0.1`; the default is the current version with any "-SNAPSHOT" suffix removed. If you're on a 1.6+ JVM, the notes should open in your default browser. The location of the file they've been saved to is displayed in the sbt output.
 
 Publication Target Site
 -----------------------
@@ -45,7 +45,7 @@ Once you've done that, you can check your setup with the `check-posterous` actio
 Publishing a Release
 --------------------
 
-Once you've previewed your source notes and checked your publishing authorization, you're ready to post to the web. Like the `preview-notes` action, `publish-notes` defaults to the current non-snapshot version and can be override by following the command with a version number. If publication is successful, the shortened published URL is displayed and will open in the default broswer on 1.6+ JVMs. *Hello, world!*
+Once you've previewed your source notes and checked your publishing authorization, you're ready to post to the web. Like the `preview-notes` action, `publish-notes` defaults to the current non-snapshot version which you can override by following the command with a version number. If publication is successful, the shortened published URL is displayed and will open in the default broswer on 1.6+ JVMs. *Hello, world!*
 
 [posterous-sbt]: http://github.com/n8han/posterous-sbt
 [simple-build-tool]: http://code.google.com/p/simple-build-tool/
