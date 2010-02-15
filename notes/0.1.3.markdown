@@ -1,0 +1,2 @@
+* Wrap "about" boilerplate in a div of class "about"
+* Include basic stylesheet in preview html to render about in italics

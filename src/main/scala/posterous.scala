@@ -34,16 +34,17 @@ trait Publish extends BasicDependencyProject {
   def versionNotesPath(version: String) = notesPath / (version + extension)
   /** Project info named about.markdown. */
   def aboutNotesPath = notesPath / ("about" + extension)
-  /** Paths to text files to be converted to xml, concatenated, and published. */
-  def postBodySources(version: String) = versionNotesPath(version) :: aboutNotesPath :: Nil
   /** @return node sequence from file or Nil if file is not found. */
   def mdToXml(md: Path) =
     if (md.exists)
       toXML(knockoff(scala.io.Source.fromFile(md.asFile).mkString))
     else
       Nil
-  /** Content to post, transforms postBodySources to xml and concatenates */
-  def postBody(version: String) = postBodySources(version) flatMap mdToXml
+  /** The content to be posted, transformed into xml. Default implementation is the version notes
+      followed by the "about" boilerplate in a div of class "about" */
+  def postBody(vers: String) = 
+    mdToXml(versionNotesPath(vers)) ++
+    <div class="about"> { mdToXml(aboutNotesPath) } </div>
   /** Agent that is posting to Posterous (this plugin) */
   def postSource = <a href="http://github.com/n8han/posterous-sbt">posterous-sbt plugin</a>
   
@@ -123,9 +124,17 @@ trait Publish extends BasicDependencyProject {
     localNotesReqs(vers) orElse {
       FileUtilities.write(notesOutputPath.asFile, 
           <html>
-          <head><title> { postTitle(vers) } </title></head>
+          <head>
+            <title> { postTitle(vers) } </title>
+            <style> {"""
+              div.about * { font-style: italic }
+              div.about em { font-style: normal }
+            """} </style>
+          </head>
+          <body>
             <h2> { postTitle(vers) } </h2>
             { postBody(vers) }
+          </body>
           </html> mkString, log
       ) orElse {
         log.success("Saved release notes: " + notesOutputPath)
