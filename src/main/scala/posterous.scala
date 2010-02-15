@@ -28,12 +28,14 @@ trait Publish extends BasicDependencyProject {
   def notesPath = path("notes")
   override def watchPaths = super.watchPaths +++ (notesPath * ("*" + extension))
   def extension = ".markdown"
+  /** Current version with any -SNAPSHOT suffix removed */
+  def currentNotesVersion = "-SNAPSHOT$".r.replaceFirstIn(version.toString, "")
   /** Release notes named with the version and a .markdown suffix. */
-  def versionNotesPath = notesPath / (version + extension)
+  def versionNotesPath(version: String) = notesPath / (version + extension)
   /** Project info named about.markdown. */
   def aboutNotesPath: Path = "about" + extension
   /** Paths to text files to be converted to xml, concatenated, and published. */
-  def postBodySources = versionNotesPath :: aboutNotesPath :: Nil
+  def postBodySources(version: String) = versionNotesPath(version) :: aboutNotesPath :: Nil
   /** @return node sequence from file or Nil if file is not found. */
   def mdToXml(md: Path) =
     if (md.exists)
@@ -41,7 +43,7 @@ trait Publish extends BasicDependencyProject {
     else
       Nil
   /** Content to post, transforms postBodySources to xml and concatenates */
-  def postBody = postBodySources flatMap mdToXml
+  def postBody(version: String) = postBodySources(version) flatMap mdToXml
   /** Agent that is posting to Posterous (this plugin) */
   def postSource = <a href="http://github.com/n8han/posterous-sbt">posterous-sbt plugin</a>
   
@@ -54,16 +56,22 @@ trait Publish extends BasicDependencyProject {
     Some(str) filter { _ == "" } map { str =>
       "Missing value %s in %s" format (title, path)
     }
+    
+  def versionTask(inner: String => Option[String]) = task { _ match {
+    case Array(vers:String) => task { inner(vers) }
+    case _ => task { inner(currentNotesVersion) }
+  } }
 
   lazy val publishNotes = publishNotesAction
-  def publishNotesAction = task { publishNotes_! } describedAs ("Publish project release notes to Posterous.")
+  def publishNotesAction = versionTask(publishNotes_!) describedAs ("Publish project release notes to Posterous.")
+  lazy val publishCurrentNotes = task { publishNotes_!(currentNotesVersion) }
 
   /** @returns Some(error) if a note publishing requirement is not met */
-  def publishNotesReqs = localNotesReqs orElse credentialReqs
+  def publishNotesReqs(vers: String) = localNotesReqs(vers) orElse credentialReqs
   def credentialReqs = ( missing(posterousCredentialsPath, "credentials file")
     ) orElse { missing(posterousEmail, posterousCredentialsPath, "email")
     } orElse { missing(posterousPassword, posterousCredentialsPath, "password") }
-  def localNotesReqs = missing(versionNotesPath, "release notes file")
+  def localNotesReqs(version: String) = missing(versionNotesPath(version), "release notes file")
   
   def posterousApi = :/("posterous.com").secure / "api" as_! (posterousEmail, posterousPassword)
   def http(block: Http => Option[String]) = try {
@@ -72,13 +80,13 @@ trait Publish extends BasicDependencyProject {
     case e: StatusCode => Some(e.getMessage)
   }
   
-  def publishNotes_! =
-    publishNotesReqs orElse {
+  def publishNotes_!(vers: String) =
+    publishNotesReqs(vers) orElse {
       val newpost = posterousApi / "newpost" << Map(
         "site_id" -> postSiteId,
         "title" -> postTitle,
         "tags" -> postTags.map { _.replace(",","_") }.removeDuplicates.mkString(","),
-        "body" -> postBody.mkString,
+        "body" -> postBody(vers).mkString,
         "source" -> postSource
       )
       http { _(newpost <> { rsp =>
@@ -110,12 +118,14 @@ trait Publish extends BasicDependencyProject {
   /** Where notes are saved for previewing */
   def notesOutputPath = outputPath / ("%s-notes.html" format artifactBaseName)
   lazy val previewNotes = previewNotesAction
-  def previewNotesAction = task { localNotesReqs orElse {
-    FileUtilities.write(notesOutputPath.asFile, <html> { postBody } </html> toString, log) orElse {
-      log.success("Saved release notes: " + notesOutputPath)
-      tryBrowse(notesOutputPath.asFile.toURI, false)
+  def previewNotesAction = versionTask { vers =>
+    localNotesReqs(vers) orElse {
+      FileUtilities.write(notesOutputPath.asFile, <html> { postBody(vers) } </html> toString, log) orElse {
+        log.success("Saved release notes: " + notesOutputPath)
+        tryBrowse(notesOutputPath.asFile.toURI, false)
+      }
     }
-  } } describedAs ("Preview project release notes as HTML and check for publishing credentials.")
+  } describedAs ("Preview project release notes as HTML and check for publishing credentials.")
   
   /** Opens uri in a browser if on a JVM 1.6+ */
   def tryBrowse(uri: URI, quiet: Boolean) = {
