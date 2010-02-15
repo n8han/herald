@@ -1,7 +1,7 @@
 posterous-sbt plugin
 ====================
 
-**posterous-sbt** is a plugin for [simple-build-tool] that automates publishing release notes to any [Posterous] site. It transforms notes from Markdown to HTML using [Knockoff], and posts them using [Dispatch].
+**posterous-sbt** is a plugin for [simple-build-tool] that automates publishing release notes to any [Posterous] site, but especially [implicit.ly]. It transforms notes from Markdown to HTML using [Knockoff], and posts them using [Dispatch].
 
 To use this plugin with an sbt project, [declare it as a dependency][plugins] in a file under `project/plugins`. Since posterous-sbt uses itself as a plugin, it has a file `posterous-sbt/project/plugins/Plugins.scala` with:
 

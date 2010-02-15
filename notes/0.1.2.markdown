@@ -1,0 +1,2 @@
+* Fix: `about.markdown` was looked for in the wrong directory; it should be found under `notes/`.
+* Made `publishCurrentNotes` a def so it won't (redundantly) appear in the actions list.

@@ -7,6 +7,8 @@ class PosterousProject(info: ProjectInfo) extends PluginProject(info) with poste
   val knockoff = "com.tristanhunt" %% "knockoff" % "0.6.1-8"
   
   override def extraTags = "knockoff" :: "dispatch" :: "sbt" :: super.extraTags
+  
+  override def publishAction = super.publishAction && publishCurrentNotes
 
   override def managedStyle = ManagedStyle.Maven
   val publishTo = "Scala Tools Nexus" at "http://nexus.scala-tools.org/content/repositories/releases/"
