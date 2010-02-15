@@ -16,7 +16,7 @@ You can use this in conjunction with other plugins, just add them as dependencie
 Notes Specification
 -------------------
 
-Release notes for your project are expected under a `note/` directory in the root of the project that mixes in the `posterous.Publish`. In this directory, notes for a particular version are named `<version>.markdown` while an optional short description about the project can be placed in `about.markdown`. For example, in this project you'll find the following:
+Release notes for your project are expected under a `notes/` directory in the root of the project that mixes in the `posterous.Publish` trait. In this directory, notes for a particular version are named `<version>.markdown` while an optional short description about the project can be placed in `about.markdown`. For example, in posterous-sbt you'll find the following:
 
     posterous-sbt/
       notes/
@@ -26,9 +26,9 @@ Release notes for your project are expected under a `note/` directory in the roo
 
 When publishing and previewing, the description from `about.markdown` is appended to the selected version's release notes as boilerplate.
 
-If you're publishing to the Scala software announcement site [implicit.ly], please keep in mind that the post's title will be the name of your project and its corresponding version; this should not be repeated as a heading in the notes. It is best to lead with copy describing the big changes in the release, or jump right into a list of those changes. For major releases with changes divided into sections, use an `h3` (a line prefixed by `###` in Markdown) or smaller heading. The short description `about.markdown` should be one or two sentences long, with links to more information about your project.
+If you're publishing to the Scala software announcement site [implicit.ly], please keep in mind that the post's title will be the name of your project and its corresponding version: these should not be repeated as a heading in the notes. It is best to lead with copy describing the big changes in your release, or jump right into a list of those changes. For major releases with changes divided into sections, use an `h3` (a line prefixed by `###` in Markdown) or smaller heading. The short description `about.markdown` should be one or two sentences long, with links to more information about your project.
 
-To preview the transformed release notes, run the `preview-notes` action in sbt. This can be followed by a version number; the default is the current version with an "-SNAPSHOT" suffix removed. If you're on a 1.6+ JVM, the notes should open in your default browser. The location of the file they've been saved to is displayed in the sbt output.
+To preview the transformed release notes, run the `preview-notes` action in sbt. This can be followed by a version number; the default is the current version with any "-SNAPSHOT" suffix removed. If you're on a 1.6+ JVM, the notes should open in your default browser. The location of the file they've been saved to is displayed in the sbt output.
 
 Publication Target Site
 -----------------------
