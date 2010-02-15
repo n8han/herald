@@ -23,7 +23,7 @@ trait Publish extends BasicDependencyProject {
   /** Strings to tag the post with, defaults to the project name, organization, extraTags, and Scala build versions */
   def postTags = name :: organization :: extraTags ::: crossScalaVersions.map { "Scala " + _ }.toList
   /** Title defaults to name and version */
-  def postTitle = "%s %s".format(name, version)
+  def postTitle(vers: String) = "%s %s".format(name, vers)
   /** Path to release notes and text about project. */
   def notesPath = path("notes")
   override def watchPaths = super.watchPaths +++ (notesPath * ("*" + extension))
@@ -84,7 +84,7 @@ trait Publish extends BasicDependencyProject {
     publishNotesReqs(vers) orElse {
       val newpost = posterousApi / "newpost" << Map(
         "site_id" -> postSiteId,
-        "title" -> postTitle,
+        "title" -> postTitle(vers),
         "tags" -> postTags.map { _.replace(",","_") }.removeDuplicates.mkString(","),
         "body" -> postBody(vers).mkString,
         "source" -> postSource
