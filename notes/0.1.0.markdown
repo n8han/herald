@@ -1,0 +1,7 @@
+Initial release:
+
+* Publication of current release notes from notes/
+* Append notes/about.markdown for linking back to project home
+* Preview release notes in a browser
+* Check publishing credentials
+* Handle a lot of error conditions with helpful messages!

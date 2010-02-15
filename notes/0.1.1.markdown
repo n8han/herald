@@ -1,0 +1,6 @@
+* Strip any -SNAPSHOT suffix from the current version when looking for release notes
+* Depend on release version of Dispatch 0.7.0
+* Can specify notes for a project version other than the current, e.g.:
+
+    > publish-notes 0.1.0
+    > preview-notes 0.1.0
