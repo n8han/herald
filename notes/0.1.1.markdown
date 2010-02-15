@@ -1,6 +1,12 @@
 * Strip any -SNAPSHOT suffix from the current version when looking for release notes
+* Ability to specify notes for a project version other than the current
 * Depend on release version of Dispatch 0.7.0
-* Can specify notes for a project version other than the current, e.g.:
+* Include title in notes preview
 
-    > publish-notes 0.1.0
+Version specifiers are optional, default is current version with any -SNAPSHOT suffix removed:
+
+    > preview-notes
     > preview-notes 0.1.0
+    > publish-notes
+    > publish-notes 0.1.0
+    
