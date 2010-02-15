@@ -33,7 +33,7 @@ trait Publish extends BasicDependencyProject {
   /** Release notes named with the version and a .markdown suffix. */
   def versionNotesPath(version: String) = notesPath / (version + extension)
   /** Project info named about.markdown. */
-  def aboutNotesPath: Path = "about" + extension
+  def aboutNotesPath = notesPath / ("about" + extension)
   /** Paths to text files to be converted to xml, concatenated, and published. */
   def postBodySources(version: String) = versionNotesPath(version) :: aboutNotesPath :: Nil
   /** @return node sequence from file or Nil if file is not found. */
@@ -64,7 +64,8 @@ trait Publish extends BasicDependencyProject {
 
   lazy val publishNotes = publishNotesAction
   def publishNotesAction = versionTask(publishNotes_!) describedAs ("Publish project release notes to Posterous.")
-  lazy val publishCurrentNotes = task { publishNotes_!(currentNotesVersion) }
+  /** Parameterless action provided as a convenience for adding as a dependency to other actions */
+  def publishCurrentNotes = task { publishNotes_!(currentNotesVersion) }
 
   /** @returns Some(error) if a note publishing requirement is not met */
   def publishNotesReqs(vers: String) = localNotesReqs(vers) orElse credentialReqs
