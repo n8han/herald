@@ -120,7 +120,13 @@ trait Publish extends BasicDependencyProject {
   lazy val previewNotes = previewNotesAction
   def previewNotesAction = versionTask { vers =>
     localNotesReqs(vers) orElse {
-      FileUtilities.write(notesOutputPath.asFile, <html> { postBody(vers) } </html> toString, log) orElse {
+      FileUtilities.write(notesOutputPath.asFile, 
+          <html>
+          <head><title> { postTitle(vers) } </title></head>
+            <h2> { postTitle(vers) } </h2>
+            { postBody(vers) }
+          </html> mkString, log
+      ) orElse {
         log.success("Saved release notes: " + notesOutputPath)
         tryBrowse(notesOutputPath.asFile.toURI, false)
       }
