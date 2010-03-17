@@ -6,9 +6,10 @@ posterous-sbt plugin
 To use this plugin with an sbt project, [declare it as a dependency][plugins] in a file under `project/plugins`. Since posterous-sbt uses itself as a plugin, it has a file `posterous-sbt/project/plugins/Plugins.scala` with:
 
     import sbt._
+
     class Plugins(info: ProjectInfo) extends PluginDefinition(info) {
       val t_repo = "t_repo" at "http://tristanhunt.com:8081/content/groups/public/"
-      val posterous = "net.databinder" % "posterous-sbt" % "0.1.1" // or latest version
+      val posterous = "net.databinder" % "posterous-sbt" % "0.1.3"
     }
 
 You can use this in conjunction with other plugins, just add them as dependencies to the same file.
