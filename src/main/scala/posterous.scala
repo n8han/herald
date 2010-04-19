@@ -40,6 +40,11 @@ trait Publish extends BasicDependencyProject {
       toXML(knockoff(scala.io.Source.fromFile(md.asFile).mkString))
     else
       Nil
+  /** @return node sequence from str or Nil if str is null or empty. */
+  def mdToXml(str: String) = str match {
+    case null | "" => Nil
+    case _ => toXML(knockoff(str))
+  }   
   /** The content to be posted, transformed into xml. Default implementation is the version notes
       followed by the "about" boilerplate in a div of class "about" */
   def postBody(vers: String) = 
@@ -132,8 +137,11 @@ trait Publish extends BasicDependencyProject {
             """} </style>
           </head>
           <body>
-            <h2> { postTitle(vers) } </h2>
+            <h2><a href="#">{ postTitle(vers) }</a></h2>
             { postBody(vers) }
+            <div id="tags">
+              { mdToXml(postTags.map("[%s](#)" format _) mkString("""Filed under // """, " ", "")) }
+            </div>
           </body>
           </html> mkString, log
       ) orElse {
