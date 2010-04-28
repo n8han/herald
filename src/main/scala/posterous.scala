@@ -74,8 +74,9 @@ trait Publish extends BasicDependencyProject {
   /** Parameterless action provided as a convenience for adding as a dependency to other actions */
   def publishCurrentNotes = task { publishNotes_!(currentNotesVersion) }
 
-  lazy val changeLog = changeLogAction
-  def changeLogAction = task { generateChangeLog(outputPath / "CHANGELOG.md") }
+  lazy val changelog = changelogAction
+  def changelogPath = outputPath / "CHANGELOG.md"
+  def changelogAction = task { generateChangelog(changelogPath) } describedAs ("Produce combined release notes" )
 
   /** @returns Some(error) if a note publishing requirement is not met */
   def publishNotesReqs(vers: String) = localNotesReqs(vers) orElse credentialReqs
@@ -91,7 +92,7 @@ trait Publish extends BasicDependencyProject {
     case e: StatusCode => Some(e.getMessage)
   }
   
-def generateChangeLog(output: Path) = {
+  def generateChangelog(output: Path) = {
     def cmpName(f: Path) = f.base.replace("""\.markdown$""", "").replaceAll("""\.""", "")
     val outputFile = output.asFile
     val inOrder = (notesFiles --- aboutNotesPath).getFiles.toList.map(Path.fromFile(_)).
