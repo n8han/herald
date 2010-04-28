@@ -1,7 +1,12 @@
+Enhancements:
+
 * Tag preview contributed by [softprops][sp]
-* Changelog generation contributed by [bmc][bmc]
-* Updated [Dispatch][dispatch] dependency to 0.7.3
-* Updated [Knockoff][knockoff] dependency to 0.7.0-10
+* `changelog` action contributed by [bmc][bmc]
+
+Dependency updates:
+
+* [Dispatch][dispatch] to 0.7.3
+* [Knockoff][knockoff] to 0.7.0-10
 
 [sp]: http://github.com/softprops
 [bmc]: http://github.com/bmc
