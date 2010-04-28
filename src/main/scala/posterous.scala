@@ -26,7 +26,8 @@ trait Publish extends BasicDependencyProject {
   def postTitle(vers: String) = "%s %s".format(name, vers)
   /** Path to release notes and text about project. */
   def notesPath = path("notes")
-  override def watchPaths = super.watchPaths +++ (notesPath * ("*" + extension))
+  def notesFiles = notesPath * ("*" + extension)
+  override def watchPaths = super.watchPaths +++ notesFiles
   def extension = ".markdown"
   /** Current version with any -SNAPSHOT suffix removed */
   def currentNotesVersion = "-SNAPSHOT$".r.replaceFirstIn(version.toString, "")
@@ -73,6 +74,9 @@ trait Publish extends BasicDependencyProject {
   /** Parameterless action provided as a convenience for adding as a dependency to other actions */
   def publishCurrentNotes = task { publishNotes_!(currentNotesVersion) }
 
+  lazy val changeLog = changeLogAction
+  def changeLogAction = task { generateChangeLog(outputPath / "CHANGELOG.md") }
+
   /** @returns Some(error) if a note publishing requirement is not met */
   def publishNotesReqs(vers: String) = localNotesReqs(vers) orElse credentialReqs
   def credentialReqs = ( missing(posterousCredentialsPath, "credentials file")
@@ -87,6 +91,21 @@ trait Publish extends BasicDependencyProject {
     case e: StatusCode => Some(e.getMessage)
   }
   
+def generateChangeLog(output: Path) = {
+    def cmpName(f: Path) = f.base.replace("""\.markdown$""", "").replaceAll("""\.""", "")
+    val outputFile = output.asFile
+    val inOrder = (notesFiles --- aboutNotesPath).getFiles.toList.map(Path.fromFile(_)).
+                  sort((p1, p2) => cmpName(p1).compareTo(cmpName(p2)) < 0).reverse.foreach { p =>
+      val fileVersion = p.base.replace("""\.markdown$""", "")
+      FileUtilities.readString(p.asFile, log) match {
+        case Right(text) => FileUtilities.append(outputFile, "\nVersion " + fileVersion + ":\n\n" + text, log)
+        case Left(error) => throw new RuntimeException(error)
+      }
+    }
+    log.info("Generated " + output)
+    None
+  }
+
   def publishNotes_!(vers: String) =
     publishNotesReqs(vers) orElse {
       val newpost = posterousApi / "newpost" << Map(
