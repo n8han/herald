@@ -54,6 +54,9 @@ trait Publish extends BasicDependencyProject {
   /** Parameterless action provided as a convenience for adding as a dependency to other actions */
   def publishCurrentNotes = task { publishNotes_!(currentNotesVersion) }
 
+  lazy val checkPublishNotes = checkPublishNotesAction
+  def checkPublishNotesAction = versionTask(publishNotesReqs) describedAs ("Check that all requirements for notes publishing are met.")
+
   lazy val changelog = changelogAction
   def changelogPath = outputPath / "CHANGELOG.md"
   def changelogAction = task { generateChangelog(changelogPath) } describedAs ("Produce combined release notes" )
@@ -108,7 +111,7 @@ trait Publish extends BasicDependencyProject {
   def checkPosterousPosting(vers: String) = {
     val posting = :/(posterousSite) / postTitle(vers).replace(" ", "-").replace(".", "")
     http { _.x(posting.HEAD) { 
-      case (200 | 302, _, _) =>  Some("It appears you've already posted notes on version %s at %s" format(
+      case (200 | 302, _, _) =>  Some("Someone has already posted notes on version %s at %s" format(
         vers, posting.to_uri
       )) 
       case _ => None
