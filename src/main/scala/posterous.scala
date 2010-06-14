@@ -19,6 +19,8 @@ trait Publish extends BasicDependencyProject {
   
   /** Posterous site id, defaults to implicit.ly */
   def postSiteId = 1031779
+  /** Hostname of target posterous, used to check that a post is not a duplicate */
+  def posterousSite = "implicit.ly"
   /** Subjective tags for the release notes post, e.g. a Scala library this project uses. */
   def extraTags: List[String] = Nil
   /** Strings to tag the post with, defaults to the project name, organization, extraTags, and Scala build versions */
@@ -63,7 +65,7 @@ trait Publish extends BasicDependencyProject {
 
   /** @returns Some(error) if a note publishing requirement is not met */
   def publishNotesReqs(vers: String) = localNotesReqs(vers) orElse 
-    credentialReqs orElse checkPosterousPosting(vers)
+    credentialReqs orElse uniquePostReq(vers)
   def credentialReqs = ( missing(posterousCredentialsPath, "credentials file")
     ) orElse { missing(posterousEmail, posterousCredentialsPath, "email")
     } orElse { missing(posterousPassword, posterousCredentialsPath, "password") }
@@ -105,10 +107,8 @@ trait Publish extends BasicDependencyProject {
       }) }
     }
 
-  /** Hostname of target posterous, used to check that a post is not a duplicate */
-  def posterousSite = "implicit.ly"
   /** Check that the current version's notes aren't already posted to posterous */
-  def checkPosterousPosting(vers: String) = {
+  def uniquePostReq(vers: String) = {
     val posting = :/(posterousSite) / postTitle(vers).replace(" ", "-").replace(".", "")
     http { _.x(posting.HEAD) { 
       case (200 | 302, _, _) =>  Some("Someone has already posted notes on version %s at %s" format(
