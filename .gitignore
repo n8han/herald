@@ -2,3 +2,4 @@ project/plugins/project/
 project/plugins/src_managed/
 project/boot/
 lib_managed/
+target/
