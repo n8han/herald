@@ -79,7 +79,8 @@ trait Publish extends BasicDependencyProject {
   def changelogAction = task { generateChangelog(changelogPath) } describedAs ("Produce combined release notes" )
 
   /** @returns Some(error) if a note publishing requirement is not met */
-  def publishNotesReqs(vers: String) = localNotesReqs(vers) orElse credentialReqs orElse checkPosterousPosting
+  def publishNotesReqs(vers: String) = localNotesReqs(vers) orElse 
+    credentialReqs orElse checkPosterousPosting(vers)
   def credentialReqs = ( missing(posterousCredentialsPath, "credentials file")
     ) orElse { missing(posterousEmail, posterousCredentialsPath, "email")
     } orElse { missing(posterousPassword, posterousCredentialsPath, "password") }
@@ -126,18 +127,18 @@ trait Publish extends BasicDependencyProject {
       }) }
     }
 
-  def posterousSite = "implicitly.posterous.com"
-  lazy val checkPosterousPosting = checkPosterousPostingAction
-  def checkPosterousPostingAction = task {
-    val resource = postTitle(currentNotesVersion).replace(" ", "-").replace(".", "")
-    val r = :/(posterousSite) / resource
-    (new Http).x(r.HEAD) { 
+  /** Hostname of target posterous, used to check that a post is not a duplicate */
+  def posterousSite = "implicit.ly"
+  /** Check that the current version's notes aren't already posted to posterous */
+  def checkPosterousPosting(vers: String) = {
+    val posting = :/(posterousSite) / postTitle(vers).replace(" ", "-").replace(".", "")
+    http { _.x(posting.HEAD) { 
       case (200 | 302, _, _) =>  Some("It appears you've already posted notes on version %s at %s" format(
-        currentNotesVersion, r.to_uri
+        vers, posting.to_uri
       )) 
       case _ => None
-    }
-  } describedAs ("Check that the current version's notes aren't already posted to posterous")
+    } }
+  }
 
   lazy val checkPosterous = checkPosterousAction
   def checkPosterousAction = task { credentialReqs orElse {
