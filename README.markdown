@@ -13,7 +13,10 @@ To use this plugin with an sbt project, [declare it as a dependency][plugins] in
       val posterous = "net.databinder" % "posterous-sbt" % "0.1.6"
     }
 
-You can use this in conjunction with other plugins, just add them as dependencies to the same file.
+And then it mixes the trait into its project definition:
+
+    class PosterousProject(info: ProjectInfo) extends PluginProject(info) with posterous.Publish ...
+
 
 Notes Specification
 -------------------
