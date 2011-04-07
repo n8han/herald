@@ -7,6 +7,7 @@ import com.tristanhunt.knockoff.DefaultDiscounter._
 import scala.xml.Node
 
 trait Publish extends BasicDependencyProject {
+  import Publish._
   def posterousCredentialsPath = Path.userHome / ".posterous"
   private def getPosterousProperty(name: String) = {
     val props = new java.util.Properties
@@ -18,6 +19,8 @@ trait Publish extends BasicDependencyProject {
   
   /** Posterous site id, defaults to implicit.ly */
   def postSiteId = 1031779
+  /** Hostname of target posterous, used to check that a post is not a duplicate */
+  def posterousSite = "implicit.ly"
   /** Subjective tags for the release notes post, e.g. a Scala library this project uses. */
   def extraTags: List[String] = Nil
   /** Strings to tag the post with, defaults to the project name, organization, extraTags, and Scala build versions */
@@ -35,17 +38,6 @@ trait Publish extends BasicDependencyProject {
   def versionNotesPath(version: String) = notesPath / (version + extension)
   /** Project info named about.markdown. */
   def aboutNotesPath = notesPath / ("about" + extension)
-  /** @return node sequence from file or Nil if file is not found. */
-  def mdToXml(md: Path) =
-    if (md.exists)
-      toXML(knockoff(scala.io.Source.fromFile(md.asFile).mkString))
-    else
-      Nil
-  /** @return node sequence from str or Nil if str is null or empty. */
-  def mdToXml(str: String) = str match {
-    case null | "" => Nil
-    case _ => toXML(knockoff(str))
-  }   
   /** The content to be posted, transformed into xml. Default implementation is the version notes
       followed by the "about" boilerplate in a div of class "about" */
   def postBody(vers: String) = 
@@ -53,45 +45,34 @@ trait Publish extends BasicDependencyProject {
     <div class="about"> { mdToXml(aboutNotesPath) } </div>
   /** Agent that is posting to Posterous (this plugin) */
   def postSource = <a href="http://github.com/n8han/posterous-sbt">posterous-sbt plugin</a>
-  
-  def missing(path: Path, title: String) =
-    Some(path) filter (!_.exists) map { ne =>
-      "Missing %s, expected in %s" format (title, path)
-    }
 
-  def missing(str: String, path: Path, title: String) = 
-    Some(str) filter { _ == "" } map { str =>
-      "Missing value %s in %s" format (title, path)
-    }
-    
-  def versionTask(inner: String => Option[String]) = task { _ match {
+  private def versionTask(inner: String => Option[String]) = task { _ match {
     case Array(vers:String) => task { inner(vers) }
     case _ => task { inner(currentNotesVersion) }
   } }
-
+  
   lazy val publishNotes = publishNotesAction
   def publishNotesAction = versionTask(publishNotes_!) describedAs ("Publish project release notes to Posterous.")
   /** Parameterless action provided as a convenience for adding as a dependency to other actions */
   def publishCurrentNotes = task { publishNotes_!(currentNotesVersion) }
+
+  lazy val checkPublishNotes = checkPublishNotesAction
+  def checkPublishNotesAction = versionTask(publishNotesReqs) describedAs ("Check that all requirements for notes publishing are met.")
 
   lazy val changelog = changelogAction
   def changelogPath = outputPath / "CHANGELOG.md"
   def changelogAction = task { generateChangelog(changelogPath) } describedAs ("Produce combined release notes" )
 
   /** @returns Some(error) if a note publishing requirement is not met */
-  def publishNotesReqs(vers: String) = localNotesReqs(vers) orElse credentialReqs
+  def publishNotesReqs(vers: String) = localNotesReqs(vers) orElse 
+    credentialReqs orElse uniquePostReq(vers)
   def credentialReqs = ( missing(posterousCredentialsPath, "credentials file")
     ) orElse { missing(posterousEmail, posterousCredentialsPath, "email")
     } orElse { missing(posterousPassword, posterousCredentialsPath, "password") }
   def localNotesReqs(version: String) = missing(versionNotesPath(version), "release notes file")
   
   def posterousApi = :/("posterous.com").secure / "api" as_! (posterousEmail, posterousPassword)
-  def http(block: Http => Option[String]) = try {
-    block(new Http)
-  } catch {
-    case e: StatusCode => Some(e.getMessage)
-  }
-  
+
   def generateChangelog(output: Path) = {
     def cmpName(f: Path) = f.base.replace("""\.markdown$""", "").replaceAll("""\.""", "")
     val outputFile = output.asFile
@@ -125,6 +106,17 @@ trait Publish extends BasicDependencyProject {
         }
       }) }
     }
+
+  /** Check that the current version's notes aren't already posted to posterous */
+  def uniquePostReq(vers: String) = {
+    val posting = :/(posterousSite) / postTitle(vers).replace(" ", "-").replace(".", "")
+    http { _.x(posting.HEAD) { 
+      case (200 | 302, _, _) =>  Some("Someone has already posted notes on version %s at %s" format(
+        vers, posting.to_uri
+      )) 
+      case _ => None
+    } }
+  }
 
   lazy val checkPosterous = checkPosterousAction
   def checkPosterousAction = task { credentialReqs orElse {
@@ -171,6 +163,39 @@ trait Publish extends BasicDependencyProject {
     }
   } describedAs ("Preview project release notes as HTML and check for publishing credentials.")
   
+}
+
+/** Utility functions */
+object Publish {
+  def http(block: Http => Option[String]) = try {
+    block(new Http)
+  } catch {
+    case e: StatusCode => Some(e.getMessage)
+  }
+  
+   /** @return node sequence from str or Nil if str is null or empty. */
+  def mdToXml(str: String) = str match {
+    case null | "" => Nil
+    case _ => toXML(knockoff(str))
+  }   
+
+  /** @return node sequence from file or Nil if file is not found. */
+  def mdToXml(md: Path) =
+    if (md.exists)
+      toXML(knockoff(scala.io.Source.fromFile(md.asFile).mkString))
+    else
+      Nil
+
+ def missing(path: Path, title: String) =
+    Some(path) filter (!_.exists) map { ne =>
+      "Missing %s, expected in %s" format (title, path)
+    }
+
+  def missing(str: String, path: Path, title: String) = 
+    Some(str) filter { _ == "" } map { str =>
+      "Missing value %s in %s" format (title, path)
+    }
+    
   /** Opens uri in a browser if on a JVM 1.6+ */
   def tryBrowse(uri: URI, quiet: Boolean) = {
     try {

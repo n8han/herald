@@ -1,0 +1,5 @@
+* Duplicate checking contributed by [softprops][softprops], to prevent the all too easy double-announcement.
+* `check-publish-notes` action checks that all conditions for publishing are satisfied, e.g. not a duplicate
+* Move utility functions outside of trait, into object to avoid collisions
+
+[softprops]: http://github.com/softprops/
