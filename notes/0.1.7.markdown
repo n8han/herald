@@ -1,0 +1,5 @@
+Updated Dispatch and knockoff dependency versions. [knockoff 0.8.0-16][kn] 
+does not require any extra Maven repositories, so sbt-posterous will not 
+have to anymore either. Yay!
+
+[kn]: http://implicit.ly/knockoff-080-16
