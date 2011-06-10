@@ -1,30 +1,36 @@
 package posterous
+
 import sbt._
+import Keys._
 
 import dispatch._
 import java.net.URI
 import com.tristanhunt.knockoff.DefaultDiscounter._
 import scala.xml.Node
 
-trait Publish extends BasicDependencyProject {
-  import Publish._
-  def posterousCredentialsPath = Path.userHome / ".posterous"
-  private def getPosterousProperty(name: String) = {
-    val props = new java.util.Properties
-    FileUtilities.readStream(posterousCredentialsPath.asFile, log){ input => props.load(input); None }
-    props.getProperty(name, "")
-  }
-  def posterousEmail = getPosterousProperty("email")
-  def posterousPassword = getPosterousProperty("password")
-  
+object PublishPlugin extends Plugin {
+  val posterousCredentialsPath = 
+    SettingKey[File]("posterous-credentials-path")
+
+  val posterousEmail = SettingKey[String]("posterous-email")
+  val posterousPassword = SettingKey[String]("posterous-password")
   /** Posterous site id, defaults to implicit.ly */
-  def postSiteId = 1031779
-  /** Hostname of target posterous, used to check that a post is not a duplicate */
-  def posterousSite = "implicit.ly"
+  val posterousSiteId = SettingKey[Int]("posterous-site-id")
+  /** Hostname of target site, used to check that a post is not a duplicate */
+  val posterousSite = SettingKey[String]("posterous-site")
+
+  val posterousTags = SettingKey[Seq[String]]("posterous-tags")
+
+  val posterousSettings: Seq[Project.Setting[_]] = Seq(
+    posterousCredentialsPath := Path.userHome / ".posterous",
+    posterousSiteId := 1031779,
+    posterousSite := "implicit.ly",
+    posterousTags <<= (crossScalaVersions, name, organization) {
+      (csv, n, o) => csv.map { "Scala " + _ } :+ n :+ o
+    }
+  )  
+/*
   /** Subjective tags for the release notes post, e.g. a Scala library this project uses. */
-  def extraTags: List[String] = Nil
-  /** Strings to tag the post with, defaults to the project name, organization, extraTags, and Scala build versions */
-  def postTags = name :: organization :: extraTags ::: crossScalaVersions.map { "Scala " + _ }.toList
   /** Title defaults to name and version */
   def postTitle(vers: String) = "%s %s".format(name, vers)
   /** Path to release notes and text about project. */
@@ -162,11 +168,8 @@ trait Publish extends BasicDependencyProject {
       }
     }
   } describedAs ("Preview project release notes as HTML and check for publishing credentials.")
-  
-}
 
-/** Utility functions */
-object Publish {
+
   def http(block: Http => Option[String]) = try {
     block(new Http)
   } catch {
@@ -207,4 +210,6 @@ object Publish {
     } catch { case e => if(quiet) None else Some("Error trying to preview notes:\n\t" + rootCause(e).toString) }
   }
   private def rootCause(e: Throwable): Throwable = if(e.getCause eq null) e else rootCause(e.getCause)
+*/
 }
+
