@@ -8,7 +8,7 @@ import Project.Initialize
 import dispatch._
 import java.net.URI
 import com.tristanhunt.knockoff.DefaultDiscounter._
-import scala.xml.Node
+import scala.xml.{NodeSeq,Node}
 
 object PublishPlugin extends Plugin {
   val posterousEmail = SettingKey[String]("posterous-email")
@@ -31,7 +31,10 @@ object PublishPlugin extends Plugin {
   val posterousAbout = SettingKey[File]("posterous-about")
   private def notesExtension = ".markdown"
 
-  val posterousSettings: Seq[Project.Setting[_]] = Seq(
+  val posterousBody = TaskKey[NodeSeq]("posterous-body")
+  val publishNotes = TaskKey[Unit]("publish-notes")
+
+  lazy val posterousSettings: Seq[Project.Setting[_]] = Seq(
     posterousSiteId := 1031779,
     posterousSite := "implicit.ly",
     posterousTags <<= (crossScalaVersions, name, organization) {
@@ -48,36 +51,38 @@ object PublishPlugin extends Plugin {
       (posterousNotesDirectory, posterousNotesVersion) { (pnd, pnv) =>
         pnd / (pnv + notesExtension)
     },
+    posterousBody <<= posterousBodyTask,
     posterousAbout <<=
       posterousNotesDirectory / ("about" + notesExtension)
   )
   /** The content to be posted, transformed into xml. Default impl
    *  is the version notes followed by the "about" boilerplate in a
    *  div of class "about" */
-  def postBody(notes: File, about: File) =
-    mdToXml(notes) ++
-    <div class="about"> { mdToXml(about) } </div>
+  private def posterousBodyTask: Initialize[Task[NodeSeq]] =
+    (posterousNotes, posterousAbout) map { (notes, about) =>
+      mdToXml(notes) ++
+      <div class="about"> { mdToXml(about) } </div>
+    }
 
   /** @return node sequence from str or Nil if str is null or empty. */
-  def mdToXml(str: String) = str match {
+  private def mdToXml(str: String) = str match {
     case null | "" => Nil
     case _ => toXML(knockoff(str))
   }   
 
   /** @return node sequence from file or Nil if file is not found. */
-  def mdToXml(md: File) =
+  private def mdToXml(md: File) =
     if (md.exists)
       toXML(knockoff(scala.io.Source.fromFile(md).mkString))
     else
       Nil
 
   /** Agent that is posting to Posterous (this plugin) */
-  def postSource =
+  private def postSource =
     <a href="http://github.com/n8han/posterous-sbt">posterous-sbt plugin</a>
 
+    
 /*
-  lazy val publishNotes = publishNotesAction
-  def publishNotesAction = versionTask(publishNotes_!) describedAs ("Publish project release notes to Posterous.")
   /** Parameterless action provided as a convenience for adding as a dependency to other actions */
   def publishCurrentNotes = task { publishNotes_!(currentNotesVersion) }
 
