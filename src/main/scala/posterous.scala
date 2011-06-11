@@ -34,7 +34,7 @@ object PublishPlugin extends Plugin {
   val posterousBody = TaskKey[NodeSeq]("posterous-body")
   val publishNotes = TaskKey[Unit]("publish-notes")
 
-  lazy val posterousSettings: Seq[Project.Setting[_]] = Seq(
+  override val settings: Seq[Project.Setting[_]] = Seq(
     posterousSiteId := 1031779,
     posterousSite := "implicit.ly",
     posterousTags <<= (crossScalaVersions, name, organization) {
@@ -61,7 +61,7 @@ object PublishPlugin extends Plugin {
   private def posterousBodyTask: Initialize[Task[NodeSeq]] =
     (posterousNotes, posterousAbout) map { (notes, about) =>
       mdToXml(notes) ++
-      <div class="about"> { mdToXml(about) } </div>
+        <div class="about"> { mdToXml(about) } </div>
     }
 
   /** @return node sequence from str or Nil if str is null or empty. */
