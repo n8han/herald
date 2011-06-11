@@ -68,14 +68,31 @@ object PublishPlugin extends Plugin {
     }
 
   private def publishNotesTask =
-    (posterousBody, posterousEmail, posterousPassword) map {
-      (body, email, pass) =>
-        println(body)
+    (posterousBody, posterousEmail, posterousPassword,
+     posterousSiteId, posterousTitle, posterousTags, streams) map {
+      (body, email, pass, siteId, title, tags, s) =>
+        val newpost = posterousApi(email, pass) / "newpost" << Map(
+          "site_id" -> siteId,
+          "title" -> title,
+          "tags" -> tags.map { _.replace(",","_") }.toSet.mkString(","),
+          "body" -> body.mkString,
+          "source" -> postSource
+        )
+        http { _(newpost <> { rsp =>
+          (rsp \ "post" \ "url").firstOption match {
+            case None => Some("No post URL found in response:\n" + rsp.mkString)
+            case Some(url) =>
+              s.log.info("Posted release notes: " + url.text)
+              tryBrowse(new URI(url.text), None)
+              None
+          }
+        }) }
+        ()
     }
 
   private def previewNotesTask = 
-    (posterousBody, posterousTitle, posterousTags, target) map {
-      (body, title, tags, out) =>
+    (posterousBody, posterousTitle, posterousTags, target, streams) map {
+      (body, title, tags, out, s) =>
         val notesOutput = out / "posterous-preview.html"
         IO.write(notesOutput, 
             <html>
@@ -95,8 +112,8 @@ object PublishPlugin extends Plugin {
             </body>
             </html> mkString
         )
-        println("Saved release notes: " + notesOutput)
-        tryBrowse(notesOutput.toURI, false)
+        s.log.info("Saved release notes: " + notesOutput)
+        tryBrowse(notesOutput.toURI, Some(s))
     }
 
   /** @return node sequence from str or Nil if str is null or empty. */
@@ -117,30 +134,31 @@ object PublishPlugin extends Plugin {
     <a href="http://github.com/n8han/posterous-sbt">posterous-sbt plugin</a>
 
   /** Opens uri in a browser if on a JVM 1.6+ */
-  private def tryBrowse(uri: URI, quiet: Boolean) {
+  private def tryBrowse(uri: URI, s: Option[TaskStreams]){
     try {
       val dsk = Class.forName("java.awt.Desktop")
       dsk.getMethod("browse", classOf[java.net.URI]).invoke(
         dsk.getMethod("getDesktop").invoke(null), uri
       )
-    } catch { case e => if(!quiet) 
-      println("Error trying to preview notes:\n\t" + rootCause(e).toString) 
+    } catch { case e => 
+      s.map { _.log.error(
+        "Error trying to preview notes:\n\t" + rootCause(e).toString) 
+      }
     }
   }
   private def rootCause(e: Throwable): Throwable =
     if(e.getCause eq null) e else rootCause(e.getCause)
     
+  private def posterousApi(email: String, password:String) =
+    :/("posterous.com").secure / "api" as_! (email, password)
+
+  def http(block: Http => Option[String]) = try {
+    block(new Http)
+  } catch {
+    case e: StatusCode => Some(e.getMessage)
+  }
+  
 /*
-  /** Parameterless action provided as a convenience for adding as a dependency to other actions */
-  def publishCurrentNotes = task { publishNotes_!(currentNotesVersion) }
-
-  lazy val checkPublishNotes = checkPublishNotesAction
-  def checkPublishNotesAction = versionTask(publishNotesReqs) describedAs ("Check that all requirements for notes publishing are met.")
-
-  lazy val changelog = changelogAction
-  def changelogPath = outputPath / "CHANGELOG.md"
-  def changelogAction = task { generateChangelog(changelogPath) } describedAs ("Produce combined release notes" )
-
   /** @returns Some(error) if a note publishing requirement is not met */
   def publishNotesReqs(vers: String) = localNotesReqs(vers) orElse 
     credentialReqs orElse uniquePostReq(vers)
@@ -149,41 +167,6 @@ object PublishPlugin extends Plugin {
     } orElse { missing(posterousPassword, posterousCredentialsPath, "password") }
   def localNotesReqs(version: String) = missing(versionNotesPath(version), "release notes file")
   
-  def posterousApi = :/("posterous.com").secure / "api" as_! (posterousEmail, posterousPassword)
-
-  def generateChangelog(output: Path) = {
-    def cmpName(f: Path) = f.base.replace("""\.markdown$""", "").replaceAll("""\.""", "")
-    val outputFile = output.asFile
-    val inOrder = (notesFiles --- aboutNotesPath).getFiles.toList.map(Path.fromFile(_)).
-                  sort((p1, p2) => cmpName(p1).compareTo(cmpName(p2)) < 0).reverse.foreach { p =>
-      val fileVersion = p.base.replace("""\.markdown$""", "")
-      FileUtilities.readString(p.asFile, log) match {
-        case Right(text) => FileUtilities.append(outputFile, "\nVersion " + fileVersion + ":\n\n" + text, log)
-        case Left(error) => throw new RuntimeException(error)
-      }
-    }
-    log.info("Generated " + output)
-    None
-  }
-
-  def publishNotes_!(vers: String) =
-    publishNotesReqs(vers) orElse {
-      val newpost = posterousApi / "newpost" << Map(
-        "site_id" -> postSiteId,
-        "title" -> postTitle(vers),
-        "tags" -> postTags.map { _.replace(",","_") }.removeDuplicates.mkString(","),
-        "body" -> postBody(vers).mkString,
-        "source" -> postSource
-      )
-      http { _(newpost <> { rsp =>
-        (rsp \ "post" \ "url").firstOption match {
-          case None => Some("No post URL found in response:\n" + rsp.mkString)
-          case Some(url) =>
-            log.success("Posted release notes: " + url.text)
-            tryBrowse(new URI(url.text), true) // ignore any error if not 1.6
-        }
-      }) }
-    }
 
   /** Check that the current version's notes aren't already posted to posterous */
   def uniquePostReq(vers: String) = {
@@ -213,12 +196,6 @@ object PublishPlugin extends Plugin {
   } } describedAs ("Check Posterous credentials and permissions for the current postSiteId.")
 
 
-  def http(block: Http => Option[String]) = try {
-    block(new Http)
-  } catch {
-    case e: StatusCode => Some(e.getMessage)
-  }
-  
  def missing(path: Path, title: String) =
     Some(path) filter (!_.exists) map { ne =>
       "Missing %s, expected in %s" format (title, path)
