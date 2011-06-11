@@ -21,7 +21,7 @@ object PublishPlugin extends Plugin {
   val posterousTags = SettingKey[Seq[String]]("posterous-tags")
 
   /** Title defaults to name and version */
-  val posterousTitle = SettingKey[String]("post-title")
+  val posterousTitle = SettingKey[String]("posterous-title")
   /** Path to release notes and text about project. */
   val posterousNotesDirectory =
     SettingKey[File]("posterous-notes-directory")
@@ -33,6 +33,7 @@ object PublishPlugin extends Plugin {
 
   val posterousBody = TaskKey[NodeSeq]("posterous-body")
   val publishNotes = TaskKey[Unit]("publish-notes")
+  val previewNotes = TaskKey[Unit]("preview-notes")
 
   override val settings: Seq[Project.Setting[_]] = Seq(
     posterousSiteId := 1031779,
@@ -51,9 +52,11 @@ object PublishPlugin extends Plugin {
       (posterousNotesDirectory, posterousNotesVersion) { (pnd, pnv) =>
         pnd / (pnv + notesExtension)
     },
-    posterousBody <<= posterousBodyTask,
     posterousAbout <<=
-      posterousNotesDirectory / ("about" + notesExtension)
+      posterousNotesDirectory / ("about" + notesExtension),
+    posterousBody <<= posterousBodyTask,
+    publishNotes <<= publishNotesTask,
+    previewNotes <<= previewNotesTask
   )
   /** The content to be posted, transformed into xml. Default impl
    *  is the version notes followed by the "about" boilerplate in a
@@ -62,6 +65,38 @@ object PublishPlugin extends Plugin {
     (posterousNotes, posterousAbout) map { (notes, about) =>
       mdToXml(notes) ++
         <div class="about"> { mdToXml(about) } </div>
+    }
+
+  private def publishNotesTask =
+    (posterousBody, posterousEmail, posterousPassword) map {
+      (body, email, pass) =>
+        println(body)
+    }
+
+  private def previewNotesTask = 
+    (posterousBody, posterousTitle, posterousTags, target) map {
+      (body, title, tags, out) =>
+        val notesOutput = out / "posterous-preview.html"
+        IO.write(notesOutput, 
+            <html>
+            <head>
+              <title> { title } </title>
+              <style> {"""
+                div.about * { font-style: italic }
+                div.about em { font-style: normal }
+              """} </style>
+            </head>
+            <body>
+              <h2><a href="#">{ title }</a></h2>
+              { body }
+              <div id="tags">
+                { mdToXml(tags.map("[%s](#)" format _) mkString("""Filed under // """, " ", "")) }
+              </div>
+            </body>
+            </html> mkString
+        )
+        println("Saved release notes: " + notesOutput)
+        tryBrowse(notesOutput.toURI, false)
     }
 
   /** @return node sequence from str or Nil if str is null or empty. */
@@ -81,6 +116,19 @@ object PublishPlugin extends Plugin {
   private def postSource =
     <a href="http://github.com/n8han/posterous-sbt">posterous-sbt plugin</a>
 
+  /** Opens uri in a browser if on a JVM 1.6+ */
+  private def tryBrowse(uri: URI, quiet: Boolean) {
+    try {
+      val dsk = Class.forName("java.awt.Desktop")
+      dsk.getMethod("browse", classOf[java.net.URI]).invoke(
+        dsk.getMethod("getDesktop").invoke(null), uri
+      )
+    } catch { case e => if(!quiet) 
+      println("Error trying to preview notes:\n\t" + rootCause(e).toString) 
+    }
+  }
+  private def rootCause(e: Throwable): Throwable =
+    if(e.getCause eq null) e else rootCause(e.getCause)
     
 /*
   /** Parameterless action provided as a convenience for adding as a dependency to other actions */
@@ -164,35 +212,6 @@ object PublishPlugin extends Plugin {
     }) }
   } } describedAs ("Check Posterous credentials and permissions for the current postSiteId.")
 
-  /** Where notes are saved for previewing */
-  def notesOutputPath = outputPath / ("%s-notes.html" format artifactBaseName)
-  lazy val previewNotes = previewNotesAction
-  def previewNotesAction = versionTask { vers =>
-    localNotesReqs(vers) orElse {
-      FileUtilities.write(notesOutputPath.asFile, 
-          <html>
-          <head>
-            <title> { postTitle(vers) } </title>
-            <style> {"""
-              div.about * { font-style: italic }
-              div.about em { font-style: normal }
-            """} </style>
-          </head>
-          <body>
-            <h2><a href="#">{ postTitle(vers) }</a></h2>
-            { postBody(vers) }
-            <div id="tags">
-              { mdToXml(postTags.map("[%s](#)" format _) mkString("""Filed under // """, " ", "")) }
-            </div>
-          </body>
-          </html> mkString, log
-      ) orElse {
-        log.success("Saved release notes: " + notesOutputPath)
-        tryBrowse(notesOutputPath.asFile.toURI, false)
-      }
-    }
-  } describedAs ("Preview project release notes as HTML and check for publishing credentials.")
-
 
   def http(block: Http => Option[String]) = try {
     block(new Http)
@@ -210,17 +229,6 @@ object PublishPlugin extends Plugin {
       "Missing value %s in %s" format (title, path)
     }
     
-  /** Opens uri in a browser if on a JVM 1.6+ */
-  def tryBrowse(uri: URI, quiet: Boolean) = {
-    try {
-      val dsk = Class.forName("java.awt.Desktop")
-      dsk.getMethod("browse", classOf[java.net.URI]).invoke(
-        dsk.getMethod("getDesktop").invoke(null), uri
-      )
-      None
-    } catch { case e => if(quiet) None else Some("Error trying to preview notes:\n\t" + rootCause(e).toString) }
-  }
-  private def rootCause(e: Throwable): Throwable = if(e.getCause eq null) e else rootCause(e.getCause)
 */
 }
 
