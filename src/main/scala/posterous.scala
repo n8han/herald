@@ -2,6 +2,8 @@ package posterous
 
 import sbt._
 import Keys._
+import Defaults._
+import Project.Initialize
 
 import dispatch._
 import java.net.URI
@@ -9,9 +11,6 @@ import com.tristanhunt.knockoff.DefaultDiscounter._
 import scala.xml.Node
 
 object PublishPlugin extends Plugin {
-  val posterousCredentialsPath = 
-    SettingKey[File]("posterous-credentials-path")
-
   val posterousEmail = SettingKey[String]("posterous-email")
   val posterousPassword = SettingKey[String]("posterous-password")
   /** Posterous site id, defaults to implicit.ly */
@@ -21,42 +20,62 @@ object PublishPlugin extends Plugin {
 
   val posterousTags = SettingKey[Seq[String]]("posterous-tags")
 
+  /** Title defaults to name and version */
+  val posterousTitle = SettingKey[String]("post-title")
+  /** Path to release notes and text about project. */
+  val posterousNotesDirectory =
+    SettingKey[File]("posterous-notes-directory")
+  val posterousNotes = SettingKey[File]("posterous-notes")
+  val posterousNotesVersion = SettingKey[String]("notes-version")
+  /** Project info named about.markdown. */
+  val posterousAbout = SettingKey[File]("posterous-about")
+  private def notesExtension = ".markdown"
+
   val posterousSettings: Seq[Project.Setting[_]] = Seq(
-    posterousCredentialsPath := Path.userHome / ".posterous",
     posterousSiteId := 1031779,
     posterousSite := "implicit.ly",
     posterousTags <<= (crossScalaVersions, name, organization) {
       (csv, n, o) => csv.map { "Scala " + _ } :+ n :+ o
-    }
-  )  
-/*
-  /** Subjective tags for the release notes post, e.g. a Scala library this project uses. */
-  /** Title defaults to name and version */
-  def postTitle(vers: String) = "%s %s".format(name, vers)
-  /** Path to release notes and text about project. */
-  def notesPath = path("notes")
-  def notesFiles = notesPath * ("*" + extension)
-  override def watchPaths = super.watchPaths +++ notesFiles
-  def extension = ".markdown"
-  /** Current version with any -SNAPSHOT suffix removed */
-  def currentNotesVersion = "-SNAPSHOT$".r.replaceFirstIn(version.toString, "")
-  /** Release notes named with the version and a .markdown suffix. */
-  def versionNotesPath(version: String) = notesPath / (version + extension)
-  /** Project info named about.markdown. */
-  def aboutNotesPath = notesPath / ("about" + extension)
-  /** The content to be posted, transformed into xml. Default implementation is the version notes
-      followed by the "about" boilerplate in a div of class "about" */
-  def postBody(vers: String) = 
-    mdToXml(versionNotesPath(vers)) ++
-    <div class="about"> { mdToXml(aboutNotesPath) } </div>
-  /** Agent that is posting to Posterous (this plugin) */
-  def postSource = <a href="http://github.com/n8han/posterous-sbt">posterous-sbt plugin</a>
+    },
+    posterousNotesVersion <<= (version) { v =>
+      "-SNAPSHOT$".r.replaceFirstIn(v, "")
+    },
+    posterousTitle <<= (name, posterousNotesVersion) {
+      "%s %s".format(_, _) 
+    },
+    posterousNotesDirectory <<= baseDirectory / "notes",
+    posterousNotes <<=
+      (posterousNotesDirectory, posterousNotesVersion) { (pnd, pnv) =>
+        pnd / (pnv + notesExtension)
+    },
+    posterousAbout <<=
+      posterousNotesDirectory / ("about" + notesExtension)
+  )
+  /** The content to be posted, transformed into xml. Default impl
+   *  is the version notes followed by the "about" boilerplate in a
+   *  div of class "about" */
+  def postBody(notes: File, about: File) =
+    mdToXml(notes) ++
+    <div class="about"> { mdToXml(about) } </div>
 
-  private def versionTask(inner: String => Option[String]) = task { _ match {
-    case Array(vers:String) => task { inner(vers) }
-    case _ => task { inner(currentNotesVersion) }
-  } }
-  
+  /** @return node sequence from str or Nil if str is null or empty. */
+  def mdToXml(str: String) = str match {
+    case null | "" => Nil
+    case _ => toXML(knockoff(str))
+  }   
+
+  /** @return node sequence from file or Nil if file is not found. */
+  def mdToXml(md: File) =
+    if (md.exists)
+      toXML(knockoff(scala.io.Source.fromFile(md).mkString))
+    else
+      Nil
+
+  /** Agent that is posting to Posterous (this plugin) */
+  def postSource =
+    <a href="http://github.com/n8han/posterous-sbt">posterous-sbt plugin</a>
+
+/*
   lazy val publishNotes = publishNotesAction
   def publishNotesAction = versionTask(publishNotes_!) describedAs ("Publish project release notes to Posterous.")
   /** Parameterless action provided as a convenience for adding as a dependency to other actions */
@@ -176,19 +195,6 @@ object PublishPlugin extends Plugin {
     case e: StatusCode => Some(e.getMessage)
   }
   
-   /** @return node sequence from str or Nil if str is null or empty. */
-  def mdToXml(str: String) = str match {
-    case null | "" => Nil
-    case _ => toXML(knockoff(str))
-  }   
-
-  /** @return node sequence from file or Nil if file is not found. */
-  def mdToXml(md: Path) =
-    if (md.exists)
-      toXML(knockoff(scala.io.Source.fromFile(md.asFile).mkString))
-    else
-      Nil
-
  def missing(path: Path, title: String) =
     Some(path) filter (!_.exists) map { ne =>
       "Missing %s, expected in %s" format (title, path)
