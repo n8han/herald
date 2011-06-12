@@ -36,6 +36,7 @@ object PublishPlugin extends Plugin {
   val previewNotes = TaskKey[Unit]("preview-notes")
   val posterousCheck = TaskKey[Unit]("posterous-check")
   val posterousRequiredInputs = TaskKey[Unit]("posterous-required-inputs")
+  val posterousDupCheck = TaskKey[Unit]("posterous-dup-check")
 
   override val settings: Seq[Project.Setting[_]] = Seq(
     posterousSiteId := 1031779,
@@ -60,7 +61,8 @@ object PublishPlugin extends Plugin {
     publishNotes <<= publishNotesTask,
     previewNotes <<= previewNotesTask,
     posterousCheck <<= posterousCheckTask,
-    posterousRequiredInputs <<= posterousRequiredInputsTask
+    posterousRequiredInputs <<= posterousRequiredInputsTask,
+    posterousDupCheck <<= posterousDupCheckTask
   )
   /** The content to be posted, transformed into xml. Default impl
    *  is the version notes followed by the "about" boilerplate in a
@@ -73,9 +75,9 @@ object PublishPlugin extends Plugin {
     }
 
   private def publishNotesTask =
-    (posterousBody, posterousEmail, posterousPassword,
-     posterousSiteId, posterousTitle, posterousTags, streams) map {
-      (body, email, pass, siteId, title, tags, s) =>
+    (posterousBody, posterousEmail, posterousPassword, posterousSiteId,
+     posterousTitle, posterousTags, posterousDupCheck, streams) map {
+      (body, email, pass, siteId, title, tags, _, s) =>
         val newpost = posterousApi(email, pass) / "newpost" << Map(
           "site_id" -> siteId.toString,
           "title" -> title,
@@ -151,6 +153,20 @@ object PublishPlugin extends Plugin {
       }
     }
 
+  /** Check that the current version's notes aren't already posted */
+  def posterousDupCheckTask =
+    (posterousEmail, posterousPassword, posterousSite, posterousTitle,
+     streams) map {     
+      (email, pass, site, title, s) =>
+        val posting = :/(site) / title.replace(" ", "-").replace(".", "")
+        http { _.x(posting.HEAD) { 
+          case (200 | 302, _, _) =>
+            error("Someone has already posted notes for %s as %s" format
+                  (title, posting.to_uri)) 
+          case _ => ()
+        } }
+    }
+
   /** @return node sequence from str or Nil if str is null or empty. */
   private def mdToXml(str: String) = str match {
     case null | "" => Nil
@@ -192,31 +208,4 @@ object PublishPlugin extends Plugin {
     try { block(h) }
     finally { h.shutdown }
   }
-  
-
-/*
-  /** Check that the current version's notes aren't already posted to posterous */
-  def uniquePostReq(vers: String) = {
-    val posting = :/(posterousSite) / postTitle(vers).replace(" ", "-").replace(".", "")
-    http { _.x(posting.HEAD) { 
-      case (200 | 302, _, _) =>  Some("Someone has already posted notes on version %s at %s" format(
-        vers, posting.to_uri
-      )) 
-      case _ => None
-    } }
-  }
-
-
- def missing(path: Path, title: String) =
-    Some(path) filter (!_.exists) map { ne =>
-      "Missing %s, expected in %s" format (title, path)
-    }
-
-  def missing(str: String, path: Path, title: String) = 
-    Some(str) filter { _ == "" } map { str =>
-      "Missing value %s in %s" format (title, path)
-    }
-    
-*/
 }
-
