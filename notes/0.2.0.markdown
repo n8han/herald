@@ -1,0 +1,38 @@
+#### Updated for sbt 0.10.0
+
+As an [sbt 0.10 plugin][plugins], posterous-sbt can be installed for
+globally for your user account; there is no need to add it to
+individual projects.
+
+To instal posterous-sbt 0.2.0, you'll need to have
+[Setup sbt 0.10][sbt]. You can then add posterous-sbt as a global
+plugin dependency in a file such as `~/.sbt/plugins/build.sbt` :
+
+    libraryDependencies += "net.databinder" %% "posterous-sbt" % "0.2.0"
+
+[plugins]: https://github.com/harrah/xsbt/wiki/Plugins
+[sbt]: https://github.com/harrah/xsbt/wiki/Setup
+
+The plugin requires your Posterous username and password, as before,
+but now it retrieves these from sbt settings. While you could specify
+these for each project, it's best to make your own "plugin" that
+specifies the settings globally. So in a file such as
+`~/.sbt/plugins/user.scala` :
+
+    import sbt._
+    import posterous.Publish._
+
+    object User extends Plugin {
+      override def settings = Seq(
+        posterousEmail := "you@example.com",
+        posterousPassword := "yourpassword"
+      )
+    }
+
+With that, you can run the familiar `preview-notes` and
+`publish-notes` actions from the sbt 0.10 console for any project.
+
+#### In Progress
+
+The ability to publish versions other than the current, and to publish
+manifests for all versions, has not yet been migrated.
