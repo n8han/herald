@@ -10,7 +10,7 @@ import java.net.URI
 import com.tristanhunt.knockoff.DefaultDiscounter._
 import scala.xml.{NodeSeq,Node}
 
-object PublishPlugin extends Plugin {
+object Publish extends Plugin {
   val posterousEmail = SettingKey[String]("posterous-email")
   val posterousPassword = SettingKey[String]("posterous-password")
   /** Posterous site id, defaults to implicit.ly */
