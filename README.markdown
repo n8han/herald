@@ -78,9 +78,9 @@ Publication Target Site
 
 This plugin comes preconfigured to publish to [implicit.ly]. To be added as a contributor to implicit.ly, [send n8han a message on github][message] **containing your email address** and a link to your Scala project if it isn't on github. If you'd like to publish to a different Posterous site, just override the `postSiteId` method in your project definition.
 
-You'll need to create a login on [Posterous] if you haven't done that yet. (Instructions for this are abvoe, under the sbt 0.7/0.10.
+You'll need to create a login on [Posterous] if you haven't done that yet. See above, under sbt 0.10 or 0.7, for instructions.
 
-Once you've done that, you can check your setup with the `check-posterous` action. This will fetch your list of authorized sites from Posterous and confirm that the project's current `postSiteId` is one of those.
+Once you've identified yourself, you can check your setup with the `check-posterous` action. This will fetch your list of authorized sites from Posterous and confirm that the project's current `postSiteId` is one of those.
 
 Publishing Release Notes
 ------------------------
