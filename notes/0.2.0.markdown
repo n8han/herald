@@ -1,11 +1,11 @@
 #### Updated for sbt 0.10.0
 
-As an [sbt 0.10 plugin][plugins], posterous-sbt can be installed for
+As an [sbt 0.10 plugin][plugins], posterous-sbt can now be installed
 globally for your user account; there is no need to add it to
 individual projects.
 
-To instal posterous-sbt 0.2.0, you'll need to have
-[Setup sbt 0.10][sbt]. You can then add posterous-sbt as a global
+To install posterous-sbt 0.2.0, you'll need to
+[setup sbt 0.10][sbt]. You can then add posterous-sbt as a global
 plugin dependency in a file such as `~/.sbt/plugins/build.sbt` :
 
     libraryDependencies += "net.databinder" %% "posterous-sbt" % "0.2.0"
@@ -30,7 +30,7 @@ specifies the settings globally. So in a file such as
     }
 
 With that, you can run the familiar `preview-notes` and
-`publish-notes` actions from the sbt 0.10 console for any project.
+`publish-notes` actions for any sbt 0.10 project.
 
 #### In Progress
 
