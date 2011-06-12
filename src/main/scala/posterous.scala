@@ -159,12 +159,12 @@ object Publish extends Plugin {
      streams) map {     
       (email, pass, site, title, s) =>
         val posting = :/(site) / title.replace(" ", "-").replace(".", "")
-        http { _.x(posting.HEAD) { 
+        http { _.x(Handler(posting.HEAD, { 
           case (200 | 302, _, _) =>
             error("Someone has already posted notes for %s as %s" format
                   (title, posting.to_uri)) 
           case _ => ()
-        } }
+        }: Handler.F[Unit])) }
     }
 
   /** @return node sequence from str or Nil if str is null or empty. */
