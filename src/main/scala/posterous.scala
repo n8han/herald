@@ -34,6 +34,7 @@ object PublishPlugin extends Plugin {
   val posterousBody = TaskKey[NodeSeq]("posterous-body")
   val publishNotes = TaskKey[Unit]("publish-notes")
   val previewNotes = TaskKey[Unit]("preview-notes")
+  val posterousCheck = TaskKey[Unit]("posterous-check")
 
   override val settings: Seq[Project.Setting[_]] = Seq(
     posterousSiteId := 1031779,
@@ -56,7 +57,8 @@ object PublishPlugin extends Plugin {
       posterousNotesDirectory / ("about" + notesExtension),
     posterousBody <<= posterousBodyTask,
     publishNotes <<= publishNotesTask,
-    previewNotes <<= previewNotesTask
+    previewNotes <<= previewNotesTask,
+    posterousCheck <<= posterousCheckTask
   )
   /** The content to be posted, transformed into xml. Default impl
    *  is the version notes followed by the "about" boilerplate in a
@@ -72,22 +74,21 @@ object PublishPlugin extends Plugin {
      posterousSiteId, posterousTitle, posterousTags, streams) map {
       (body, email, pass, siteId, title, tags, s) =>
         val newpost = posterousApi(email, pass) / "newpost" << Map(
-          "site_id" -> siteId,
+          "site_id" -> siteId.toString,
           "title" -> title,
           "tags" -> tags.map { _.replace(",","_") }.toSet.mkString(","),
           "body" -> body.mkString,
-          "source" -> postSource
+          "source" -> postSource.toString
         )
         http { _(newpost <> { rsp =>
-          (rsp \ "post" \ "url").firstOption match {
+          (rsp \ "post" \ "url").headOption match {
             case None => Some("No post URL found in response:\n" + rsp.mkString)
             case Some(url) =>
-              s.log.info("Posted release notes: " + url.text)
+              s.log.success("Posted release notes: " + url.text)
               tryBrowse(new URI(url.text), None)
               None
           }
         }) }
-        ()
     }
 
   private def previewNotesTask = 
@@ -112,9 +113,32 @@ object PublishPlugin extends Plugin {
             </body>
             </html> mkString
         )
-        s.log.info("Saved release notes: " + notesOutput)
+        s.log.success("Saved release notes: " + notesOutput)
         tryBrowse(notesOutput.toURI, Some(s))
     }
+
+  def posterousCheckTask =
+    (posterousEmail, posterousPassword, posterousSiteId, streams) map { 
+      (email, pass, siteId, s) =>
+        http { _(posterousApi(email, pass) / "getsites" <> { rsp =>
+          s.log.info("%s contributes to the following sites:" format
+                     posterousEmail)
+          for {
+            site <- rsp \ "site"
+            id <- site \ "id"
+            name <- site \ "name"
+          } s.log.info("  %-10s%s" format (id.text, name.text))
+
+          rsp \ "site" \ "id" filter {
+            _.text == siteId.toString
+          } match {
+            case ids if ids.isEmpty =>
+              s.log.error("You are not authorized to contribute to %d, the configured posterousSiteId." format siteId)
+            case _ => 
+              s.log.success("You may contribute to %d, this project's postSiteId." format siteId)
+          }
+        }) }
+  }
 
   /** @return node sequence from str or Nil if str is null or empty. */
   private def mdToXml(str: String) = str match {
@@ -152,12 +176,13 @@ object PublishPlugin extends Plugin {
   private def posterousApi(email: String, password:String) =
     :/("posterous.com").secure / "api" as_! (email, password)
 
-  def http(block: Http => Option[String]) = try {
-    block(new Http)
-  } catch {
-    case e: StatusCode => Some(e.getMessage)
+  def http[T](block: Http => T) {
+    val h = new Http
+    try { block(h) }
+    finally { h.shutdown }
   }
   
+
 /*
   /** @returns Some(error) if a note publishing requirement is not met */
   def publishNotesReqs(vers: String) = localNotesReqs(vers) orElse 
@@ -178,22 +203,6 @@ object PublishPlugin extends Plugin {
       case _ => None
     } }
   }
-
-  lazy val checkPosterous = checkPosterousAction
-  def checkPosterousAction = task { credentialReqs orElse {
-    http { _(posterousApi / "getsites" <> { rsp =>
-      log.info("%s contributes to the following sites:" format posterousEmail)
-      for (site <- rsp \ "site"; id <- site \ "id"; name <- site \ "name")
-        log.info("  %-10s%s" format (id.text, name.text))
-      
-      rsp \ "site" \ "id" filter { _.text == postSiteId.toString } match {
-        case ids if ids.isEmpty => Some("You are not authorized to contribute to %d, this project's postSiteId." format postSiteId)
-        case _ => 
-          log.success("You may contribute to %d, this project's postSiteId." format postSiteId)
-          None
-      }
-    }) }
-  } } describedAs ("Check Posterous credentials and permissions for the current postSiteId.")
 
 
  def missing(path: Path, title: String) =
