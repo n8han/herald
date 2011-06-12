@@ -35,6 +35,7 @@ object PublishPlugin extends Plugin {
   val publishNotes = TaskKey[Unit]("publish-notes")
   val previewNotes = TaskKey[Unit]("preview-notes")
   val posterousCheck = TaskKey[Unit]("posterous-check")
+  val posterousRequiredInputs = TaskKey[Unit]("posterous-required-inputs")
 
   override val settings: Seq[Project.Setting[_]] = Seq(
     posterousSiteId := 1031779,
@@ -58,15 +59,17 @@ object PublishPlugin extends Plugin {
     posterousBody <<= posterousBodyTask,
     publishNotes <<= publishNotesTask,
     previewNotes <<= previewNotesTask,
-    posterousCheck <<= posterousCheckTask
+    posterousCheck <<= posterousCheckTask,
+    posterousRequiredInputs <<= posterousRequiredInputsTask
   )
   /** The content to be posted, transformed into xml. Default impl
    *  is the version notes followed by the "about" boilerplate in a
    *  div of class "about" */
   private def posterousBodyTask: Initialize[Task[NodeSeq]] =
-    (posterousNotes, posterousAbout) map { (notes, about) =>
-      mdToXml(notes) ++
-        <div class="about"> { mdToXml(about) } </div>
+    (posterousNotes, posterousAbout, posterousRequiredInputs) map {
+      (notes, about, _) =>
+        mdToXml(notes) ++
+          <div class="about"> { mdToXml(about) } </div>
     }
 
   private def publishNotesTask =
@@ -117,7 +120,7 @@ object PublishPlugin extends Plugin {
         tryBrowse(notesOutput.toURI, Some(s))
     }
 
-  def posterousCheckTask =
+  private def posterousCheckTask =
     (posterousEmail, posterousPassword, posterousSiteId, streams) map { 
       (email, pass, siteId, s) =>
         http { _(posterousApi(email, pass) / "getsites" <> { rsp =>
@@ -139,6 +142,14 @@ object PublishPlugin extends Plugin {
           }
         }) }
   }
+
+  private def posterousRequiredInputsTask =
+    (posterousAbout, posterousNotes) map { (about, notes) =>
+      (about :: notes :: Nil) foreach { f =>
+        if (!f.exists)
+          error("Required file missing: " + f)
+      }
+    }
 
   /** @return node sequence from str or Nil if str is null or empty. */
   private def mdToXml(str: String) = str match {
@@ -184,15 +195,6 @@ object PublishPlugin extends Plugin {
   
 
 /*
-  /** @returns Some(error) if a note publishing requirement is not met */
-  def publishNotesReqs(vers: String) = localNotesReqs(vers) orElse 
-    credentialReqs orElse uniquePostReq(vers)
-  def credentialReqs = ( missing(posterousCredentialsPath, "credentials file")
-    ) orElse { missing(posterousEmail, posterousCredentialsPath, "email")
-    } orElse { missing(posterousPassword, posterousCredentialsPath, "password") }
-  def localNotesReqs(version: String) = missing(versionNotesPath(version), "release notes file")
-  
-
   /** Check that the current version's notes aren't already posted to posterous */
   def uniquePostReq(vers: String) = {
     val posting = :/(posterousSite) / postTitle(vers).replace(" ", "-").replace(".", "")
