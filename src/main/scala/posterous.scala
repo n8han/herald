@@ -59,7 +59,9 @@ object Publish extends Plugin {
       posterousNotesDirectory / ("about" + notesExtension),
     posterousBody <<= posterousBodyTask,
     publishNotes <<= publishNotesTask,
+    (aggregate in publishNotes) := false,
     previewNotes <<= previewNotesTask,
+    (aggregate in previewNotes) := false,
     posterousCheck <<= posterousCheckTask,
     posterousRequiredInputs <<= posterousRequiredInputsTask,
     posterousDupCheck <<= posterousDupCheckTask

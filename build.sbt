@@ -2,7 +2,7 @@ name := "posterous-sbt"
 
 organization := "net.databinder"
 
-version := "0.2.0"
+version := "0.2.1-SNAPSHOT"
 
 scalaVersion := "2.8.1"
 
