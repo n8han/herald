@@ -27,8 +27,6 @@ posterousPassword := "yourpassword"
 
 ```
 
-There is an [open issue for global settings in sbt](https://github.com/harrah/xsbt/issues/52). If it bugs you, feel free to fork and fix.
-
 sbt 0.7
 -------
 
