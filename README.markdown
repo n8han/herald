@@ -3,28 +3,56 @@ posterous-sbt plugin
 
 **posterous-sbt** is a plugin for [simple-build-tool] that automates publishing release notes to any [Posterous] site, but especially [implicit.ly]. It transforms notes from Markdown to HTML using [Knockoff], and posts them using [Dispatch].
 
-sbt 0.10.1
+sbt 0.10.x
 ----------
 
 It's best to use this a global plugin so that it works with any of
 your projects and your forkers don't have to know anything about it.
 
-You can add posterous-sbt to your global sbt classpath in a file
-`~/.sbt/plugins/build.sbt`
+### Source dependency
 
+Plugins must be compiled against the same version of sbt they are used
+with. To ease migration to new sbt versions you can make posterous-sbt
+a source dependency, and it will be compiled as needed.
+
+**~/.sbt/plugins/project/build.scala**
 ```scala
-libraryDependencies += "net.databinder" %% "posterous-sbt" % "0.2.1"
+import sbt._
+object PluginDef extends Build {
+  lazy val root = Project("plugins", file(".")) dependsOn( webPlugin )
+  lazy val webPlugin = uri("git://github.com/n8han/posterous-sbt#0.2.1")
+}
 ```
 
+### User settings
+
 Once this is done, you'll need to set your Posterous email and
-password before you can start sbt for any project. You can do this in
-a global sbt script, such as `~/.sbt/user.sbt`
+password before you can start sbt for any project. Currently, we
+recommend creating a custom plugin.
 
+**~/.sbt/plugins/user.scala**
 ```scala
-posterousEmail := "you@example.com"
+import sbt._
+import Keys._
 
-posterousPassword := "yourpassword"
+import posterous.Publish._
 
+object User extends Plugin {
+  override def settings = Seq(
+    posterousEmail := "you@example.com",
+    posterousPassword := "yourpassword"
+  )
+}
+```
+
+There is a new way to do this in sbt 0.10.1, but as long as sbt 0.10.0
+projects are floating around you should stick with the above.
+
+### As a binary dependency (not recommended)
+
+***`~/.sbt/plugins/build.sbt`***
+```scala
+libraryDependencies += "net.databinder" %% "posterous-sbt" % "0.2.1"
 ```
 
 sbt 0.7
