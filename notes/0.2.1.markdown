@@ -1,2 +1,2 @@
 * Updated for sbt 0.10.1
-* Disable aggregate cascading for `publish-notes` task
+* Disables aggregate cascading for `publish-notes` task

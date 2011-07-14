@@ -3,8 +3,8 @@ posterous-sbt plugin
 
 **posterous-sbt** is a plugin for [simple-build-tool] that automates publishing release notes to any [Posterous] site, but especially [implicit.ly]. It transforms notes from Markdown to HTML using [Knockoff], and posts them using [Dispatch].
 
-sbt 0.10
---------
+sbt 0.10.1
+----------
 
 It's best to use this a global plugin so that it works with any of
 your projects and your forkers don't have to know anything about it.
@@ -13,7 +13,7 @@ You can add posterou-sbt to your global sbt classpath in a file
 `~/.sbt/plugins/build.sbt`
 
 ```scala
-libraryDependencies += "net.databinder" %% "posterous-sbt" % "0.2.0"
+libraryDependencies += "net.databinder" %% "posterous-sbt" % "0.2.1"
 ```
 
 Once this is done, you'll need to set your Posterous email and
