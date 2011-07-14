@@ -20,8 +20,8 @@ a source dependency, and it will be compiled as needed.
 ```scala
 import sbt._
 object PluginDef extends Build {
-  lazy val root = Project("plugins", file(".")) dependsOn( webPlugin )
-  lazy val webPlugin = uri("git://github.com/n8han/posterous-sbt#0.2.1")
+  lazy val root = Project("plugins", file(".")) dependsOn(posterous)
+  lazy val posterous = uri("git://github.com/n8han/posterous-sbt#0.2.1")
 }
 ```
 
