@@ -16,6 +16,7 @@ with. To ease migration to new sbt versions you can make posterous-sbt
 a source dependency, and it will be compiled as needed.
 
 **~/.sbt/plugins/project/build.scala**
+
 ```scala
 import sbt._
 object PluginDef extends Build {
@@ -31,6 +32,7 @@ password before you can start sbt for any project. Currently, we
 recommend creating a custom plugin.
 
 **~/.sbt/plugins/user.scala**
+
 ```scala
 import sbt._
 import Keys._
@@ -51,6 +53,7 @@ projects are floating around you should stick with the above.
 ### As a binary dependency (not recommended)
 
 ***`~/.sbt/plugins/build.sbt`***
+
 ```scala
 libraryDependencies += "net.databinder" %% "posterous-sbt" % "0.2.1"
 ```
