@@ -17,19 +17,14 @@ libraryDependencies += "net.databinder" %% "posterous-sbt" % "0.2.1"
 ```
 
 Once this is done, you'll need to set your Posterous email and
-password before you can start sbt for any project. Currently,
-we recommend creating a custom plugin, such as `~/.sbt/plugins/user.scala`
+password before you can start sbt for any project. You can do this in
+a global sbt script, such as `~/.sbt/user.sbt`
 
 ```scala
-import sbt._
-import posterous.Publish._
+posterousEmail := "you@example.com"
 
-object User extends Plugin {
-  override def settings = Seq(
-    posterousEmail := "you@example.com",
-    posterousPassword := "yourpassword"
-  )
-}
+posterousPassword := "yourpassword"
+
 ```
 
 There is an [open issue for global settings in sbt](https://github.com/harrah/xsbt/issues/52). If it bugs you, feel free to fork and fix.
