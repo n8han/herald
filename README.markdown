@@ -9,7 +9,7 @@ sbt 0.10.1
 It's best to use this a global plugin so that it works with any of
 your projects and your forkers don't have to know anything about it.
 
-You can add posterou-sbt to your global sbt classpath in a file
+You can add posterous-sbt to your global sbt classpath in a file
 `~/.sbt/plugins/build.sbt`
 
 ```scala
