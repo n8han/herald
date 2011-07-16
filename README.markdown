@@ -15,7 +15,9 @@ global plugin for your user account.
 ***`~/.sbt/plugins/build.sbt`***
 
 ```scala
-libraryDependencies += "net.databinder" %% "posterous-sbt" % "0.2.2"
+libraryDependencies <+= (sbtVersion) { sv =>
+  "net.databinder" %% "posterous-sbt" % ("0.2.2_sbt" + sv)
+}
 ```
 
 ### User settings

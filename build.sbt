@@ -2,7 +2,7 @@ name := "posterous-sbt"
 
 organization := "net.databinder"
 
-version := "0.2.2"
+version <<= (sbtVersion) { sv => "0.2.2_sbt" + sv }
 
 scalaVersion := "2.8.1"
 
@@ -16,11 +16,3 @@ publishTo := Some("Scala Tools Nexus" at "http://nexus.scala-tools.org/content/r
 credentials += Credentials(Path.userHome / ".ivy2" / ".credentials")
 
 sbtPlugin := true
-
-publishArtifact in (Compile, packageBin) := false
-
-publishArtifact in (Compile, packageDoc) := false
-
-publishArtifact in (Compile, packageSrc) := true
-
-publishArtifact in (Test, packageSrc) := false
