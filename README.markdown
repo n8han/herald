@@ -6,9 +6,6 @@ posterous-sbt plugin
 sbt 0.10.x
 ----------
 
-It's best to use this a global plugin so that it works with any of
-your projects and your forkers don't have to know anything about it.
-
 ### As a global dependency
 
 Don't put posterous-sbt in a project or else everyone that checks it
