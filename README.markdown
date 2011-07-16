@@ -9,20 +9,16 @@ sbt 0.10.x
 It's best to use this a global plugin so that it works with any of
 your projects and your forkers don't have to know anything about it.
 
-### Source dependency
+### As a global dependency
 
-Plugins must be compiled against the same version of sbt they are used
-with. To ease migration to new sbt versions you can make posterous-sbt
-a source dependency, and it will be compiled as needed.
+Don't put posterous-sbt in a project or else everyone that checks it
+out **must** have a posterous login configure. Instead, make it a
+global plugin for your user account.
 
-**~/.sbt/plugins/project/build.scala**
+***`~/.sbt/plugins/build.sbt`***
 
 ```scala
-import sbt._
-object PluginDef extends Build {
-  lazy val root = Project("plugins", file(".")) dependsOn(posterous)
-  lazy val posterous = uri("git://github.com/n8han/posterous-sbt#0.2.1")
-}
+libraryDependencies += "net.databinder" %% "posterous-sbt" % "0.2.2"
 ```
 
 ### User settings
@@ -49,14 +45,6 @@ object User extends Plugin {
 
 There is a new way to do this in sbt 0.10.1, but as long as sbt 0.10.0
 projects are floating around you should stick with the above.
-
-### As a binary dependency (not recommended)
-
-***`~/.sbt/plugins/build.sbt`***
-
-```scala
-libraryDependencies += "net.databinder" %% "posterous-sbt" % "0.2.1"
-```
 
 sbt 0.7
 -------
