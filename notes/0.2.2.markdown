@@ -1,0 +1,3 @@
+Published as a source-jar *only* for less gnashing of
+teeth. Compatible with sbt 0.10.0, 0.10.1, probably future versions
+too. See the revised [installation instructions](https://github.com/n8han/posterous-sbt#readme).
