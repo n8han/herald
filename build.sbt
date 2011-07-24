@@ -1,8 +1,14 @@
+import posterous.Publish._
+
 name := "posterous-sbt"
 
 organization := "net.databinder"
 
-version <<= (sbtVersion) { sv => "0.2.3_sbt" + sv + "-SNAPSHOT" }
+(version in Posterous) := "0.3.0"
+
+version <<= (version, sbtVersion) { (v, sbtv) => 
+  v + "_sbt" + sbtv
+}
 
 scalaVersion := "2.8.1"
 

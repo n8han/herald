@@ -1,0 +1,51 @@
+### Scoped settings and tasks
+
+All posterous-sbt settings and tasks are now scoped into a
+configuration named "posterous". This will require you to change the
+way your email and password are defined (yes, *again*). More on that
+below.
+
+Because the settings and tasked are scoped, we no longer need to
+prefix them to avoid collisions. So `publish-notes` is now just
+`publish` in the `posterous` scope. This is how you invoke it sbt's
+interactive mode:
+
+    posterous:publish
+
+Same goes for the old `preview-notes`, it's now this:
+
+    posterous:preview
+
+& co.
+
+### Optional email and password settings
+
+The settings type for your email and password has changed from a
+`String` to an `Option[String]`. This allows the plugin to define a
+default value of `None`.
+
+This allows you to launch sbt and use it normally even an unconfigured
+instance of posterous-sbt is loaded. Previously, you would get a
+confusing error on launch. Now, you will see a specific error when you
+try to run the `posterous:publish` or `posterous:check` options.
+
+You will need to adjust the way your user settings are configured with
+this release. At this point, all projects and users should have
+upgraded from sbt 0.10.0 to 0.10.1, so it is recommended that you
+remove your file `~/.sbt/plugins/user.scala` if present, and instead
+configure using a file `~/.sbt/user.sbt`:
+
+    import posterous.Publish._
+
+    (email in Posterous) := Some("you@example.com")
+
+    (password in Posterous) := Some("yourpassword")
+
+### To upgrade your global plugin
+
+After updating your user settings as described above, update your
+`libraryDependencies` in `~/.sbt./plugins/build.sbt`:
+
+    libraryDependencies <+= (sbtVersion) { sv =>
+      "net.databinder" %% "posterous-sbt" % ("0.3.0_sbt" + sv)
+    }
