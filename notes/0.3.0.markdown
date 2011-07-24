@@ -10,11 +10,11 @@ prefix them to avoid collisions. So `publish-notes` is now just
 `publish` in the `posterous` scope. This is how you invoke it sbt's
 interactive mode:
 
-    posterous:publish
+    > posterous:publish
 
 Same goes for the old `preview-notes`, it's now this:
 
-    posterous:preview
+    > posterous:preview
 
 ### Optional email and password settings
 
