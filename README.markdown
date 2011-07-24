@@ -49,6 +49,7 @@ you can safely reference posterous settings inside your project's
 build definition. e.g., to change the published project name:
 
     import posterous.Publish._
+
     (name in Posterous) := "A Friendlier Name"
 
 sbt 0.7
