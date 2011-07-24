@@ -2,7 +2,7 @@ name := "posterous-sbt"
 
 organization := "net.databinder"
 
-version <<= (sbtVersion) { sv => "0.2.2_sbt" + sv }
+version <<= (sbtVersion) { sv => "0.2.3_sbt" + sv + "-SNAPSHOT" }
 
 scalaVersion := "2.8.1"
 

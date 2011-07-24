@@ -11,8 +11,8 @@ import com.tristanhunt.knockoff.DefaultDiscounter._
 import scala.xml.{NodeSeq,Node}
 
 object Publish extends Plugin {
-  val posterousEmail = SettingKey[String]("posterous-email")
-  val posterousPassword = SettingKey[String]("posterous-password")
+  val posterousEmail = SettingKey[Option[String]]("posterous-email")
+  val posterousPassword = SettingKey[Option[String]]("posterous-password")
   /** Posterous site id, defaults to implicit.ly */
   val posterousSiteId = SettingKey[Int]("posterous-site-id")
   /** Hostname of target site, used to check that a post is not a duplicate */
@@ -64,7 +64,9 @@ object Publish extends Plugin {
     (aggregate in previewNotes) := false,
     posterousCheck <<= posterousCheckTask,
     posterousRequiredInputs <<= posterousRequiredInputsTask,
-    posterousDupCheck <<= posterousDupCheckTask
+    posterousDupCheck <<= posterousDupCheckTask,
+    posterousEmail := None,
+    posterousPassword := None
   )
   /** The content to be posted, transformed into xml. Default impl
    *  is the version notes followed by the "about" boilerplate in a
@@ -75,11 +77,19 @@ object Publish extends Plugin {
         mdToXml(notes) ++
           <div class="about"> { mdToXml(about) } </div>
     }
-
+  private def require[T](value: Option[String],
+                         setting: SettingKey[Option[String]]) =
+    value.getOrElse {
+      error("%s setting is required".format(
+        setting.key.label
+      ))
+    }
   private def publishNotesTask =
     (posterousBody, posterousEmail, posterousPassword, posterousSiteId,
      posterousTitle, posterousTags, posterousDupCheck, streams) map {
-      (body, email, pass, siteId, title, tags, _, s) =>
+      (body, emailOpt, passOpt, siteId, title, tags, _, s) =>
+        val pass = require(passOpt, posterousPassword)
+        val email = require(emailOpt, posterousEmail)
         val newpost = posterousApi(email, pass) / "newpost" << Map(
           "site_id" -> siteId.toString,
           "title" -> title,
@@ -126,7 +136,9 @@ object Publish extends Plugin {
 
   private def posterousCheckTask =
     (posterousEmail, posterousPassword, posterousSiteId, streams) map { 
-      (email, pass, siteId, s) =>
+      (emailOpt, passOpt, siteId, s) =>
+        val pass = require(passOpt, posterousPassword)
+        val email = require(emailOpt, posterousEmail)
         http { _(posterousApi(email, pass) / "getsites" <> { rsp =>
           s.log.info("%s contributes to the following sites:" format
                      posterousEmail)
