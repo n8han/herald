@@ -35,7 +35,7 @@ import posterous.Publish._
 }
 ```
 
-### As a project plugin dependency
+### Project-specific settings
 
 If you wish to customize any settings for your project and commit
 those into source control, you *must* add posterous-sbt as a project

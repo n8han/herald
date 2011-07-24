@@ -16,8 +16,6 @@ Same goes for the old `preview-notes`, it's now this:
 
     posterous:preview
 
-& co.
-
 ### Optional email and password settings
 
 The settings type for your email and password has changed from a
@@ -25,15 +23,17 @@ The settings type for your email and password has changed from a
 default value of `None`.
 
 This allows you to launch sbt and use it normally even an unconfigured
-instance of posterous-sbt is loaded. Previously, you would get a
-confusing error on launch. Now, you will see a specific error when you
+instance of posterous-sbt is loaded. Previously, you would see a
+confusing error on launch. Now, you will see an error only when you
 try to run the `posterous:publish` or `posterous:check` options.
 
-You will need to adjust the way your user settings are configured with
-this release. At this point, all projects and users should have
-upgraded from sbt 0.10.0 to 0.10.1, so it is recommended that you
-remove your file `~/.sbt/plugins/user.scala` if present, and instead
-configure using a file `~/.sbt/user.sbt`:
+## Settings adjustment
+
+You need to adjust the way your user settings are configured with this
+release. Since all projects and users should have upgraded from sbt
+0.10.0 to 0.10.1 by now, it is recommended that you remove your file
+`~/.sbt/plugins/user.scala` if present, and instead configure using a
+file `~/.sbt/user.sbt`:
 
     import posterous.Publish._
 
@@ -49,3 +49,8 @@ After updating your user settings as described above, update your
     libraryDependencies <+= (sbtVersion) { sv =>
       "net.databinder" %% "posterous-sbt" % ("0.3.0_sbt" + sv)
     }
+
+### Project-specific settings
+
+Information on project-specific configuration of the plugin has been
+added [to the readme](https://github.com/n8han/posterous-sbt#readme).
