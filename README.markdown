@@ -32,7 +32,6 @@ import posterous.Publish._
 (email in Posterous) := Some("you@example.com")
 
 (password in Posterous) := Some("yourpassword")
-}
 ```
 
 ### Project-specific settings
