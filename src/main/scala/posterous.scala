@@ -11,68 +11,71 @@ import com.tristanhunt.knockoff.DefaultDiscounter._
 import scala.xml.{NodeSeq,Node}
 
 object Publish extends Plugin {
-  val posterousEmail = SettingKey[Option[String]]("posterous-email")
-  val posterousPassword = SettingKey[Option[String]]("posterous-password")
-  /** Posterous site id, defaults to implicit.ly */
-  val posterousSiteId = SettingKey[Int]("posterous-site-id")
-  /** Hostname of target site, used to check that a post is not a duplicate */
-  val posterousSite = SettingKey[String]("posterous-site")
+  val Posterous = config("posterous")
 
-  val posterousTags = SettingKey[Seq[String]]("posterous-tags")
+  val email = SettingKey[Option[String]]("email")
+  val password = SettingKey[Option[String]]("password")
+  /** Posterous site id, defaults to implicit.ly */
+  val siteId = SettingKey[Int]("site-id")
+  /** Hostname of target site, used to check that a post is not a duplicate */
+  val site = SettingKey[String]("site")
+
+  val tags = SettingKey[Seq[String]]("tags")
 
   /** Title defaults to name and version */
-  val posterousTitle = SettingKey[String]("posterous-title")
+  val title = SettingKey[String]("title")
   /** Path to release notes and text about project. */
-  val posterousNotesDirectory =
-    SettingKey[File]("posterous-notes-directory")
-  val posterousNotes = SettingKey[File]("posterous-notes")
-  val posterousNotesVersion = SettingKey[String]("notes-version")
+  val notesDirectory =
+    SettingKey[File]("notes-directory")
+  val notesFile = SettingKey[File]("notes-file")
   /** Project info named about.markdown. */
-  val posterousAbout = SettingKey[File]("posterous-about")
+  val aboutFile = SettingKey[File]("about-file")
   private def notesExtension = ".markdown"
 
-  val posterousBody = TaskKey[NodeSeq]("posterous-body")
-  val publishNotes = TaskKey[Unit]("publish-notes")
-  val previewNotes = TaskKey[Unit]("preview-notes")
-  val posterousCheck = TaskKey[Unit]("posterous-check")
-  val posterousRequiredInputs = TaskKey[Unit]("posterous-required-inputs")
-  val posterousDupCheck = TaskKey[Unit]("posterous-dup-check")
+  val body = TaskKey[NodeSeq]("body")
+  val notes = TaskKey[Unit]("notes")
+  val preview = TaskKey[Unit]("preview")
+  val check = TaskKey[Unit]("check")
+  val requiredInputs = TaskKey[Unit]("required-inputs")
+  val dupCheck = TaskKey[Unit]("dup-check")
 
-  override val settings: Seq[Project.Setting[_]] = Seq(
-    posterousSiteId := 1031779,
-    posterousSite := "implicit.ly",
-    posterousTags <<= (crossScalaVersions, name, organization) {
+  val posterousSettings: Seq[sbt.Project.Setting[_]] =
+      inConfig(Posterous)(Seq(
+    siteId := 1031779,
+    site := "implicit.ly",
+    tags <<= (crossScalaVersions, name, organization) {
       (csv, n, o) => csv.map { "Scala " + _ } :+ n :+ o
     },
-    posterousNotesVersion <<= (version) { v =>
+    version <<= (version) { v =>
       "-SNAPSHOT$".r.replaceFirstIn(v, "")
     },
-    posterousTitle <<= (name, posterousNotesVersion) {
+    title <<= (name, version) {
       "%s %s".format(_, _) 
     },
-    posterousNotesDirectory <<= baseDirectory / "notes",
-    posterousNotes <<=
-      (posterousNotesDirectory, posterousNotesVersion) { (pnd, pnv) =>
+    notesDirectory <<= baseDirectory / "notes",
+    notesFile <<=
+      (notesDirectory, version) { (pnd, pnv) =>
         pnd / (pnv + notesExtension)
     },
-    posterousAbout <<=
-      posterousNotesDirectory / ("about" + notesExtension),
-    posterousBody <<= posterousBodyTask,
-    publishNotes <<= publishNotesTask,
-    (aggregate in publishNotes) := false,
-    previewNotes <<= previewNotesTask,
-    (aggregate in previewNotes) := false,
-    posterousCheck <<= posterousCheckTask,
-    posterousRequiredInputs <<= posterousRequiredInputsTask,
-    posterousDupCheck <<= posterousDupCheckTask,
-    posterousEmail := None,
-    posterousPassword := None
-  )
+    aboutFile <<=
+      notesDirectory / ("about" + notesExtension),
+    body <<= bodyTask,
+    publish <<= publishNotesTask,
+    (aggregate in publish) := false,
+    preview <<= previewNotesTask,
+    (aggregate in preview) := false,
+    check <<= checkTask,
+    requiredInputs <<= requiredInputsTask,
+    dupCheck <<= dupCheckTask,
+    email := None,
+    password := None
+  ))
+  override val settings = super.settings ++ posterousSettings
   /** The content to be posted, transformed into xml. Default impl
    *  is the version notes followed by the "about" boilerplate in a
    *  div of class "about" */
-  private def posterousBodyTask: Initialize[Task[NodeSeq]] =
-    (posterousNotes, posterousAbout, posterousRequiredInputs) map {
+  private def bodyTask: Initialize[Task[NodeSeq]] =
+    (notesFile, aboutFile, requiredInputs) map {
       (notes, about, _) =>
         mdToXml(notes) ++
           <div class="about"> { mdToXml(about) } </div>
@@ -85,12 +88,12 @@ object Publish extends Plugin {
       ))
     }
   private def publishNotesTask =
-    (posterousBody, posterousEmail, posterousPassword, posterousSiteId,
-     posterousTitle, posterousTags, posterousDupCheck, streams) map {
+    (body, email, password, siteId,
+     title, tags, dupCheck, streams) map {
       (body, emailOpt, passOpt, siteId, title, tags, _, s) =>
-        val pass = require(passOpt, posterousPassword)
-        val email = require(emailOpt, posterousEmail)
-        val newpost = posterousApi(email, pass) / "newpost" << Map(
+        val pass = require(passOpt, password)
+        val em = require(emailOpt, email)
+        val newpost = posterousApi(em, pass) / "newpost" << Map(
           "site_id" -> siteId.toString,
           "title" -> title,
           "tags" -> tags.map { _.replace(",","_") }.toSet.mkString(","),
@@ -109,7 +112,7 @@ object Publish extends Plugin {
     }
 
   private def previewNotesTask = 
-    (posterousBody, posterousTitle, posterousTags, target, streams) map {
+    (body, title, tags, target, streams) map {
       (body, title, tags, out, s) =>
         val notesOutput = out / "posterous-preview.html"
         IO.write(notesOutput, 
@@ -134,14 +137,14 @@ object Publish extends Plugin {
         tryBrowse(notesOutput.toURI, Some(s))
     }
 
-  private def posterousCheckTask =
-    (posterousEmail, posterousPassword, posterousSiteId, streams) map { 
+  private def checkTask =
+    (email, password, siteId, streams) map { 
       (emailOpt, passOpt, siteId, s) =>
-        val pass = require(passOpt, posterousPassword)
-        val email = require(emailOpt, posterousEmail)
-        http { _(posterousApi(email, pass) / "getsites" <> { rsp =>
+        val pass = require(passOpt, password)
+        val em = require(emailOpt, email)
+        http { _(posterousApi(em, pass) / "getsites" <> { rsp =>
           s.log.info("%s contributes to the following sites:" format
-                     posterousEmail)
+                     email)
           for {
             site <- rsp \ "site"
             id <- site \ "id"
@@ -159,8 +162,8 @@ object Publish extends Plugin {
         }) }
   }
 
-  private def posterousRequiredInputsTask =
-    (posterousAbout, posterousNotes) map { (about, notes) =>
+  private def requiredInputsTask =
+    (aboutFile, notesFile) map { (about, notes) =>
       (about :: notes :: Nil) foreach { f =>
         if (!f.exists)
           error("Required file missing: " + f)
@@ -168,8 +171,8 @@ object Publish extends Plugin {
     }
 
   /** Check that the current version's notes aren't already posted */
-  def posterousDupCheckTask =
-    (posterousEmail, posterousPassword, posterousSite, posterousTitle,
+  def dupCheckTask =
+    (email, password, site, title,
      streams) map {     
       (email, pass, site, title, s) =>
         val posting = :/(site) / title.replace(" ", "-").replace(".", "")
