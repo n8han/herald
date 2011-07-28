@@ -27,8 +27,6 @@ password before you can publish release notes.
 **~/.sbt/user.sbt**
 
 ```scala
-import posterous.Publish._
-
 (email in Posterous) := Some("you@example.com")
 
 (password in Posterous) := Some("yourpassword")
@@ -47,9 +45,9 @@ it in `project/plugins/build.sbt` under your project directory. Then,
 you can safely reference posterous settings inside your project's
 build definition. e.g., to change the published project name:
 
-    import posterous.Publish._
-
-    (name in Posterous) := "A Friendlier Name"
+```scala
+(name in Posterous) := "A Friendlier Name"
+```
 
 sbt 0.7
 -------
