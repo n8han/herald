@@ -3,7 +3,7 @@ posterous-sbt plugin
 
 **posterous-sbt** is a plugin for [simple-build-tool] that automates publishing release notes to any [Posterous] site, but especially [implicit.ly]. It transforms notes from Markdown to HTML using [Knockoff], and posts them using [Dispatch].
 
-sbt 0.10.x
+sbt 0.11.x
 ----------
 
 ### As a global dependency
@@ -14,19 +14,20 @@ without having to make any changes to that project's definition.
 ***`~/.sbt/plugins/build.sbt`***
 
 ```scala
-libraryDependencies <+= (sbtVersion) { sv =>
-  "net.databinder" %% "posterous-sbt" % ("0.3.0_sbt" + sv)
-}
+addSbtPlugin("net.databinder" %% "posterous-sbt" % "0.3.2")
 ```
 
 ### User settings
 
-Once this is done, you'll need to set your Posterous email and
-password before you can publish release notes.
+You also need to apply the plugin settings and set your Posterous
+email and password. You can do this in one place for all your
+projects:
 
 **~/.sbt/user.sbt**
 
 ```scala
+seq(posterous.Publish.posterousSettings :_*)
+
 (email in Posterous) := Some("you@example.com")
 
 (password in Posterous) := Some("yourpassword")
@@ -40,7 +41,7 @@ plugin; otherwise, anyone who checks out the project and doesn't have
 the plugin globally will be unable to build.
 
 To add posterous-sbt as a project dependency, use the same
-`libaryDependencies` as shown for the global configuration, but place
+`addSbtPlugin` as shown for the global configuration, but place
 it in `project/plugins/build.sbt` under your project directory. Then,
 you can safely reference posterous settings inside your project's
 build definition. e.g., to change the published project name:
