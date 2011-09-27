@@ -1,0 +1,15 @@
+Compatibility with sbt 0.11.0. Change your dependency declaration from
+`libraryDependencies` to this:
+
+    addSbtPlugin("net.databinder" %% "posterous-sbt" % "0.3.1")
+
+And add an import of the plugin settings to `~/.sbt/user.sbt` or
+wherever you have set your Posterous username and password. You must
+apply these settings *before* setting your password and username,
+otherwise they will be overriden by the defaults (`None`).
+
+    seq(posterous.Publish.posterousSettings :_*)
+
+    (email in Posterous) := Some("you@example.com")
+
+    (password in Posterous) := Some("urpassword")
