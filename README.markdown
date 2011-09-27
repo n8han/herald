@@ -11,7 +11,7 @@ sbt 0.11.x
 If you install posterous-sbt globally, you can use it with any project
 without having to make any changes to that project's definition.
 
-***`~/.sbt/plugins/build.sbt`***
+**~/.sbt/plugins/build.sbt**
 
 ```scala
 addSbtPlugin("net.databinder" %% "posterous-sbt" % "0.3.2")
