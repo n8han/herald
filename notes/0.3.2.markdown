@@ -1,7 +1,7 @@
 Compatibility with sbt 0.11.0. Change your dependency declaration from
 `libraryDependencies` to this:
 
-    addSbtPlugin("net.databinder" %% "posterous-sbt" % "0.3.1")
+    addSbtPlugin("net.databinder" %% "posterous-sbt" % "0.3.2")
 
 And add an import of the plugin settings to `~/.sbt/user.sbt` or
 wherever you have set your Posterous username and password. You must
