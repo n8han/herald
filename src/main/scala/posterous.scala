@@ -83,7 +83,7 @@ object Publish extends Plugin {
   private def require[T](value: Option[String],
                          setting: SettingKey[Option[String]]) =
     value.getOrElse {
-      error("%s setting is required".format(
+      sys.error("%s setting is required".format(
         setting.key.label
       ))
     }
@@ -166,7 +166,7 @@ object Publish extends Plugin {
     (aboutFile, notesFile) map { (about, notes) =>
       (about :: notes :: Nil) foreach { f =>
         if (!f.exists)
-          error("Required file missing: " + f)
+          sys.error("Required file missing: " + f)
       }
     }
 
@@ -178,7 +178,7 @@ object Publish extends Plugin {
         val posting = :/(site) / title.replace(" ", "-").replace(".", "")
         http { _.x(Handler(posting.HEAD, { 
           case (200 | 302, _, _) =>
-            error("Someone has already posted notes for %s as %s" format
+            sys.error("Someone has already posted notes for %s as %s" format
                   (title, posting.to_uri)) 
           case _ => ()
         }: Handler.F[Unit])) }

@@ -1,19 +1,11 @@
-import posterous.Publish._
-
 name := "posterous-sbt"
 
 organization := "net.databinder"
 
-(version in Posterous) := "0.3.0"
-
-version <<= (version, sbtVersion) { (v, sbtv) => 
-  v + "_sbt" + sbtv
-}
-
-scalaVersion := "2.8.1"
+version := "0.3.0"
 
 libraryDependencies ++= Seq(
-                    "net.databinder" %% "dispatch-http" % "0.8.3",
+                    "net.databinder" %% "dispatch-http" % "0.8.5",
                     "com.tristanhunt" %% "knockoff" % "0.8.0-16"
 )
 
