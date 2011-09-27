@@ -26,7 +26,7 @@ projects:
 **~/.sbt/user.sbt**
 
 ```scala
-seq(posterous.Publish.posterousSettings :_*)
+seq(posterousSettings :_*)
 
 (email in Posterous) := Some("you@example.com")
 
