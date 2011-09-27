@@ -70,7 +70,7 @@ object Publish extends Plugin {
     email := None,
     password := None
   ))
-  override val settings = super.settings ++ posterousSettings
+
   /** The content to be posted, transformed into xml. Default impl
    *  is the version notes followed by the "about" boilerplate in a
    *  div of class "about" */
