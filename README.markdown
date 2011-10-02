@@ -14,7 +14,7 @@ without having to make any changes to that project's definition.
 **~/.sbt/plugins/build.sbt**
 
 ```scala
-addSbtPlugin("net.databinder" %% "posterous-sbt" % "0.3.2")
+addSbtPlugin("net.databinder" % "posterous-sbt" % "0.3.2")
 ```
 
 ### User settings
