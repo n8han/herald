@@ -49,10 +49,13 @@ object Herald {
   /** Path to release notes and text about project. */
   def notesDirectory = file(base, "notes")
 
-  def version: Either[String,String] = sys.error("todo")
-  def notesFile = notesDirectory.right.flatMap { n =>
-    file(n, version + notesExtension)
-  }
+  def version: Either[String,String] = Left("version is todo")
+  def notesFile: Either[String, File] = for {
+    notes <- notesDirectory.right
+    v <- version.right
+    f <- file(notes, v + notesExtension).right
+  } yield f
+
   /** Project info named about.markdown. */
   def aboutFile = notesDirectory.right.flatMap { n =>
     file(n, "about" + notesExtension)
@@ -62,7 +65,7 @@ object Herald {
   /** The content to be posted, transformed into xml. Default impl
    *  is the version notes followed by the "about" boilerplate in a
    *  div of class "about" */
-  private def bodyContent =
+  def bodyContent =
     for {
       notes <- notesFile.right
       about <- aboutFile.right
@@ -95,24 +98,6 @@ object Herald {
     }
 */
 
-  def previewContent = 
-    for {
-      body <- bodyContent.right
-      t <- title.right
-    } yield
-      <html>
-      <head>
-        <title> { title } </title>
-        <style> {"""
-          div.about * { font-style: italic }
-          div.about em { font-style: normal }
-        """} </style>
-      </head>
-      <body>
-        <h2><a href="#">{ title }</a></h2>
-        { body }
-      </body>
-      </html>
 /*
   private def checkTask =
     (email, password, siteId, streams) map { 
@@ -181,7 +166,16 @@ object Herald {
   }
 */
   def run(args: Array[String]) = {
-    0
+    (for {
+      _ <- bodyContent.right
+      _ <- title.right
+    } yield {
+      Preview(bodyContent, title)
+      "Stopped preview."
+    }).fold(
+      err => { System.err.println(err); 1 },
+      msg => { println(msg); 0 }
+    )
   }
   def main(args: Array[String]) {
     System.exit(run(args))
