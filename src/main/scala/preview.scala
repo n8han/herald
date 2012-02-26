@@ -28,14 +28,14 @@ object Preview {
     } yield
       <html>
       <head>
-        <title> { title } </title>
+        <title> { t } </title>
         <style> {"""
           div.about * { font-style: italic }
           div.about em { font-style: normal }
         """} </style>
       </head>
       <body>
-        <h2><a href="#">{ title }</a></h2>
+        <h2><a href="#">{ t }</a></h2>
         { body }
       </body>
       </html>

@@ -36,6 +36,17 @@ object Herald {
       "Required path %s/%s does not exist".format(parent.toString, child)
     }
 
+  def dir(parent: File, child: String) =
+    file(parent, child).right.flatMap { f =>
+      if (f.isDirectory) Right(f)
+      else Left("Path %s must be a directory".format(f))
+    }
+
+  def notesFile(name: String) =
+    notesDirectory.right.flatMap { d =>
+      file(d, "%s.%s".format(name, notesExtension))
+    }
+
   /** Posterous site id, defaults to implicit.ly */
   def siteId = 1031779
   def site = "implicit.ly"
@@ -47,30 +58,61 @@ object Herald {
   def name = base.getName
 
   /** Path to release notes and text about project. */
-  def notesDirectory = file(base, "notes")
+  def notesDirectory = dir(base, "notes")
 
-  def version: Either[String,String] = Left("version is todo")
-  def notesFile: Either[String, File] = for {
+  implicit def seqOrdering[A](implicit cmp: Ordering[A]) =
+    new Ordering[Seq[A]] {
+      @annotation.tailrec
+      def compare (lx: Seq[A], ly: Seq[A]) = {
+        if (lx.isEmpty && ly.isEmpty) 0
+        else if (lx.isEmpty) -1
+        else if (ly.isEmpty) 1
+        else {
+          val cur = cmp.compare(lx.head, ly.head)
+          if (cur == 0) compare(lx.tail, ly.tail)
+          else cur
+        }
+      }
+    }
+
+  def version: Either[String,String] =
+    notesDirectory.right.flatMap { notes =>
+      val Note = ("(.*)[.]" + notesExtension).r
+      val versions = notes.listFiles.map { _.getName }.collect {
+        case Note(version) if version != aboutName => version
+      }
+      if (versions.isEmpty)
+        Left("no version notes found in " + notes)
+      else Right(
+        versions.maxBy {
+          _.split("\\D").filterNot { _.isEmpty }.map { _.toInt }.toSeq
+        }
+      )
+    }
+
+  def versionFile = for {
     notes <- notesDirectory.right
     v <- version.right
-    f <- file(notes, v + notesExtension).right
+    f <- notesFile(v).right
   } yield f
 
+
+  def aboutName = "about"
   /** Project info named about.markdown. */
   def aboutFile = notesDirectory.right.flatMap { n =>
-    file(n, "about" + notesExtension)
+    notesFile(aboutName)
   }
-  private def notesExtension = ".markdown"
+  def notesExtension = "markdown"
 
   /** The content to be posted, transformed into xml. Default impl
    *  is the version notes followed by the "about" boilerplate in a
    *  div of class "about" */
   def bodyContent =
     for {
-      notes <- notesFile.right
+      versionNotes <- versionFile.right
       about <- aboutFile.right
     } yield
-      mdToXml(notes) ++
+      mdToXml(versionNotes) ++
         <div class="about"> { mdToXml(about) } </div>
 
 /*  def publishNotes =
