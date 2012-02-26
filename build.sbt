@@ -1,8 +1,10 @@
-name := "posterous-sbt"
+seq(conscriptSettings :_*)
 
-organization := "net.databinder"
+name := "herald-app"
 
-version := "0.3.2"
+organization := "net.databinder.herald"
+
+version := "0.4.0-SNAPSHOT"
 
 libraryDependencies ++= Seq(
                     "net.databinder" %% "dispatch-http" % "0.8.5",
@@ -12,5 +14,3 @@ libraryDependencies ++= Seq(
 publishTo := Some("Scala Tools Nexus" at "http://nexus.scala-tools.org/content/repositories/releases/")
 
 credentials += Credentials(Path.userHome / ".ivy2" / ".credentials")
-
-sbtPlugin := true
