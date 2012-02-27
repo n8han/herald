@@ -48,8 +48,8 @@ object Herald {
     }
 
   /** Posterous site id, defaults to implicit.ly */
-  def siteId = 6903194 // 1031779
-  def site = "herald-test.posterous.com" // "implicit.ly"
+  def siteId = 1031779
+  def site = "implicit.ly"
 
   def base = new File(".").getCanonicalFile
 

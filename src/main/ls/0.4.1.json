@@ -1,0 +1,38 @@
+
+{
+ "organization":"net.databinder.herald",
+ "name":"herald-app",
+ "version":"0.4.1-SNAPSHOT",
+ "description":"herald is a program to tell the world about your latest software release",
+ "site":"https://github.com/n8han/herald",
+ "tags":[],
+ "docs":"",
+ "licenses": [{
+   "name": "LGPL v3",
+   "url": "http://www.gnu.org/licenses/lgpl.txt"
+  }],
+ "resolvers": ["http://scala-tools.org/repo-releases"],
+ "dependencies": [{
+   "organization":"org.scala-tools.sbt",
+   "name": "launcher-interface_2.9.1",
+   "version": "0.11.2"
+  },{
+   "organization":"com.tristanhunt",
+   "name": "knockoff",
+   "version": "0.8.0-16"
+  },{
+   "organization":"net.databinder",
+   "name": "unfiltered-netty-server",
+   "version": "0.6.0"
+  },{
+   "organization":"net.databinder.dispatch",
+   "name": "core",
+   "version": "0.9.0-alpha2"
+  },{
+   "organization":"org.slf4j",
+   "name": "slf4j-jdk14",
+   "version": "1.6.2"
+  }],
+ "scalas": ["2.9.1"],
+ "sbt": false
+}

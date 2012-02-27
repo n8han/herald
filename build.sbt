@@ -4,7 +4,7 @@ name := "herald-app"
 
 organization := "net.databinder.herald"
 
-version := "0.4.0"
+version := "0.4.1-SNAPSHOT"
 
 homepage := Some(url("https://github.com/n8han/herald"))
 
@@ -15,7 +15,8 @@ description :=
 libraryDependencies ++= Seq(
                     "com.tristanhunt" %% "knockoff" % "0.8.0-16",
                     "net.databinder" %% "unfiltered-netty-server" % "0.6.0",
-                    "net.databinder.dispatch" %% "core" % "0.9.0-alpha2"
+                    "net.databinder.dispatch" %% "core" % "0.9.0-alpha2",
+                    "org.slf4j" % "slf4j-jdk14" % "1.6.2"
 )
 
 credentials += Credentials(Path.userHome / ".ivy2" / ".credentials")
