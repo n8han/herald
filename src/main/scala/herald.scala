@@ -48,8 +48,8 @@ object Herald {
     }
 
   /** Posterous site id, defaults to implicit.ly */
-  def siteId = 1031779
-  def site = "implicit.ly"
+  def siteId = 6903194 // 1031779
+  def site = "herald-test.posterous.com" // "implicit.ly"
 
   def base = new File(".").getCanonicalFile
 
@@ -115,72 +115,6 @@ object Herald {
       mdToXml(versionNotes) ++
         <div class="about"> { mdToXml(about) } </div>
 
-/*  def publishNotes =
-    (body, email, password, siteId,
-     title, tags, dupCheck, streams) map {
-      (body, emailOpt, passOpt, siteId, title, tags, _, s) =>
-        val pass = require(passOpt, password)
-        val em = require(emailOpt, email)
-        val newpost = posterousApi(em, pass) / "newpost" << Map(
-          "site_id" -> siteId.toString,
-          "title" -> title,
-          "tags" -> tags.map { _.replace(",","_") }.toSet.mkString(","),
-          "body" -> body.mkString,
-          "source" -> postSource.toString
-        )
-        http { _(newpost <> { rsp =>
-          (rsp \ "post" \ "url").headOption match {
-            case None => Some("No post URL found in response:\n" + rsp.mkString)
-            case Some(url) =>
-              s.log.success("Posted release notes: " + url.text)
-              tryBrowse(new URI(url.text), None)
-              None
-          }
-        }) }
-    }
-*/
-
-/*
-  private def checkTask =
-    (email, password, siteId, streams) map { 
-      (emailOpt, passOpt, siteId, s) =>
-        val pass = require(passOpt, password)
-        val em = require(emailOpt, email)
-        http { _(posterousApi(em, pass) / "getsites" <> { rsp =>
-          s.log.info("%s contributes to the following sites:" format
-                     email)
-          for {
-            site <- rsp \ "site"
-            id <- site \ "id"
-            name <- site \ "name"
-          } s.log.info("  %-10s%s" format (id.text, name.text))
-
-          rsp \ "site" \ "id" filter {
-            _.text == siteId.toString
-          } match {
-            case ids if ids.isEmpty =>
-              s.log.error("You are not authorized to contribute to %d, the configured posterousSiteId." format siteId)
-            case _ => 
-              s.log.success("You may contribute to %d, this project's postSiteId." format siteId)
-          }
-        }) }
-  }
-*/
-
-  /** Check that the current version's notes aren't already posted */
-/*  def dupCheckTask =
-    (email, password, site, title,
-     streams) map {     
-      (email, pass, site, title, s) =>
-        val posting = :/(site) / title.replace(" ", "-").replace(".", "")
-        http { _.x(Handler(posting.HEAD, { 
-          case (200 | 302, _, _) =>
-            sys.error("Someone has already posted notes for %s as %s" format
-                  (title, posting.to_uri)) 
-          case _ => ()
-        }: Handler.F[Unit])) }
-    }
-*/
   /** @return node sequence from str or Nil if str is null or empty. */
   private def mdToXml(str: String) = str match {
     case null | "" => Nil
@@ -194,27 +128,30 @@ object Herald {
     else
       Nil
 
-  /** Agent that is posting to Posterous (this plugin) */
-  private def postSource =
-    <a href="http://github.com/n8han/posterous-sbt">posterous-sbt plugin</a>
-
-/*  private def posterousApi(email: String, password:String) =
-    :/("posterous.com").secure / "api" as_! (email, password)
-
-  def http[T](block: Http => T) {
-    val h = new Http
-    try { block(h) }
-    finally { h.shutdown }
-  }
-*/
   def run(args: Array[String]) = {
-    (for {
-      _ <- bodyContent.right
-      _ <- title.right
-    } yield {
-      Preview(bodyContent, title)
-      "Stopped preview."
-    }).fold(
+    val either = args match {
+      case Array("--publish") =>
+        for {
+          body <- bodyContent.right
+          title <- title.right
+          email <- posterousEmail.right
+          pass <- posterousPassword.right
+          url <- Publish(body, email, pass, siteId, title, name)().right
+        } yield {
+          unfiltered.util.Browser.open(url)
+          "Published to " + url
+        }
+      case _ =>
+        for {
+          _ <- bodyContent.right
+          _ <- title.right
+        } yield {
+          Preview(bodyContent, title)
+          "Stopped preview."
+        }
+    }
+    Http.shutdown()
+    either.fold(
       err => { System.err.println(err); 1 },
       msg => { println(msg); 0 }
     )
