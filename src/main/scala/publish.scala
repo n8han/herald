@@ -34,11 +34,13 @@ object Publish {
 
   def asXml = As.string.andThen { str => XML.load(Source.fromString(str)) }
 
+  def asStatus = new FunctionHandler( _.getStatusCode )
+
   /** Check that the current version's notes aren't already posted */
   def duplicate(email: String, pass: String, site: String, title: String)
   : Promise[Option[String]]= {
     val posting = :/(site) / title.replace(" ", "-").replace(".", "")
-    Http(posting.HEAD > As { _.getStatusCode }).either.map {
+    Http(posting.HEAD > asStatus).either.map {
       _.fold(
         err => Some(httperror(err)),
         code => code match {

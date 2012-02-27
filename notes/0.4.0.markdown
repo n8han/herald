@@ -1,0 +1,36 @@
+The sbt plugin formerly known as posterous-sbt is now the conscript
+application known as *herald*.
+
+Install herald using [conscript][cs]:
+
+    cs n8han/herald
+
+[cs]: https://github.com/n8han/conscript#readme
+
+Then you can preview your release notes for any project by running
+`herald` in its base directory. Since herald isn't an sbt plugin with
+ready access to your project settings, it assumes the notes you want
+to work with are the highest numbered ones in your `notes`
+directory. This is almost always the case!
+
+Herald's preview feature opens a local browser for a server running
+inside herald. If you need to make a change to your release notes,
+just save the file and refresh. When you're done, hit enter back in
+the terminal that's running herald and its server will shutdown.
+
+Herald looks for your Posterous publishing credentials in
+`~/.posterous` with the regular Java properties format:
+
+    email = you@example.com
+    password = urpassword
+
+(Old timers will recall that this was the configuration mechanism for
+posterous-sbt in the halcyon days of sbt 0.7.)
+
+After you have made a `~/.posterous` or discovered you still had one
+lying around, you can publish a project's release notes from its base
+directory:
+
+    herald --publish
+
+Just be sure you actually want to do that.

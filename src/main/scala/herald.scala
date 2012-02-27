@@ -146,6 +146,8 @@ object Herald {
           }
         }
         nested.joinRight.joinRight
+      case Array("--version") =>
+        Right("herald is ready to go")
       case _ =>
         for {
           _ <- bodyContent.right

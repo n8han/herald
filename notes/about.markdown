@@ -1,3 +1,3 @@
-[posterous-sbt][1] is a plug-in for Simple Build Tool that automates publishing release notes to any Posterous site.
+[herald][1] is a program to tell the world about your latest software release
 
-[1]: http://github.com/n8han/posterous-sbt
+[1]: http://github.com/n8han/herald
