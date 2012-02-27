@@ -42,3 +42,6 @@ pomExtra := (
       <url>http://github.com/n8han</url>
     </developer>
   </developers>)
+
+
+seq(lsSettings :_*)
