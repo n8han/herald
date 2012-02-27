@@ -18,64 +18,39 @@ object Publish {
         "tags" -> name,
         "body" -> body.mkString,
         "source" -> source.toString
-      ) > As.string).either
+      ) > asXml).either
     ) yield {
-      eth.left.map { exc =>
-        "Error posting to Posterous site %d: %s".format(
-          siteId, exc.getMessage
-        )
-      }.right.flatMap { str =>
-        (XML.load(Source.fromString(str)) \ "post" \ "url").map {
+      eth.left.map(httperror).right.flatMap { xml =>
+        (xml \ "post" \ "url").map {
           nd => Right(nd.text)
         }.headOption.getOrElse {
-          Left("No post URL found in response: " + str)
+          Left("No post URL found in response: " + xml)
         }
       }
     }
   }
+  def httperror(t: Throwable) =
+    "Error communicating with Posterous: " + t.getMessage
 
-
-/*
-  private def checkTask =
-    (email, password, siteId, streams) map { 
-      (emailOpt, passOpt, siteId, s) =>
-        val pass = require(passOpt, password)
-        val em = require(emailOpt, email)
-        http { _(posterousApi(em, pass) / "getsites" <> { rsp =>
-          s.log.info("%s contributes to the following sites:" format
-                     email)
-          for {
-            site <- rsp \ "site"
-            id <- site \ "id"
-            name <- site \ "name"
-          } s.log.info("  %-10s%s" format (id.text, name.text))
-
-          rsp \ "site" \ "id" filter {
-            _.text == siteId.toString
-          } match {
-            case ids if ids.isEmpty =>
-              s.log.error("You are not authorized to contribute to %d, the configured posterousSiteId." format siteId)
-            case _ => 
-              s.log.success("You may contribute to %d, this project's postSiteId." format siteId)
-          }
-        }) }
-  }
-*/
+  def asXml = As.string.andThen { str => XML.load(Source.fromString(str)) }
 
   /** Check that the current version's notes aren't already posted */
-/*  def dupCheckTask =
-    (email, password, site, title,
-     streams) map {     
-      (email, pass, site, title, s) =>
-        val posting = :/(site) / title.replace(" ", "-").replace(".", "")
-        http { _.x(Handler(posting.HEAD, { 
-          case (200 | 302, _, _) =>
-            sys.error("Someone has already posted notes for %s as %s" format
-                  (title, posting.to_uri)) 
-          case _ => ()
-        }: Handler.F[Unit])) }
+  def duplicate(email: String, pass: String, site: String, title: String)
+  : Promise[Option[String]]= {
+    val posting = :/(site) / title.replace(" ", "-").replace(".", "")
+    Http(posting.HEAD > As { _.getStatusCode }).either.map {
+      _.fold(
+        err => Some(httperror(err)),
+        code => code match {
+          case 200 | 302 =>
+            Some("Someone has already posted notes for %s as %s".format(
+              title, posting.url
+            ))
+          case _ => None
+        }
+      )
     }
-*/
+  }
 
   def posterousApi(email: String, password:String) =
     host("posterous.com").secure / "api" as (email, password)
