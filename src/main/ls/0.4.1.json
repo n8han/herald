@@ -2,7 +2,7 @@
 {
  "organization":"net.databinder.herald",
  "name":"herald-app",
- "version":"0.4.1-SNAPSHOT",
+ "version":"0.4.1",
  "description":"herald is a program to tell the world about your latest software release",
  "site":"https://github.com/n8han/herald",
  "tags":[],
