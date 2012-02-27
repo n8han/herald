@@ -45,7 +45,7 @@ object Publish {
         err => Some(httperror(err)),
         code => code match {
           case 200 | 302 =>
-            Some("Someone has already posted notes for %s as %s".format(
+            Some("Someone has already published %s !\n-> %s".format(
               title, posting.url
             ))
           case _ => None

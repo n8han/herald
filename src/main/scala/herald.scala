@@ -141,7 +141,7 @@ object Herald {
             Publish(body, email, pass, siteId, title, name)().right.map {
               url =>
                 unfiltered.util.Browser.open(url)
-                "Published to " + url
+                "Published %s\n-> %s".format(title, url)
             }
           }
         }

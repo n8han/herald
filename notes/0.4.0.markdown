@@ -1,4 +1,4 @@
-The sbt plugin formerly known as posterous-sbt is now the conscript
+The sbt plugin formerly known as posterous-sbt is now the standalone
 application known as *herald*.
 
 Install herald using [conscript][cs]:
