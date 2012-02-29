@@ -38,17 +38,17 @@ object Publish {
 
   /** Check that the current version's notes aren't already posted */
   def duplicate(email: String, pass: String, site: String, title: String)
-  : Promise[Option[String]]= {
+  : PromiseEither[String,String] = {
     val posting = :/(site) / title.replace(" ", "-").replace(".", "")
     Http(posting.HEAD > asStatus).either.map {
       _.fold(
-        err => Some(httperror(err)),
+        err => Left(httperror(err)),
         code => code match {
           case 200 | 302 =>
-            Some("Someone has already published %s !\n-> %s".format(
+            Left("Someone has already published %s !\n-> %s".format(
               title, posting.url
             ))
-          case _ => None
+          case _ => Right(title)
         }
       )
     }

@@ -131,21 +131,18 @@ object Herald {
   def run(args: Array[String]) = {
     val either = args match {
       case Array("--publish") =>
-        val nested = for {
-          body <- bodyContent.right
-          title <- title.right
-          email <- posterousEmail.right
-          pass <- posterousPassword.right
+        val promised = for {
+          body <- Promise.of(bodyContent).right
+          title <- Promise.of(title).right
+          email <- Promise.of(posterousEmail).right
+          pass <- Promise.of(posterousPassword).right
+          _ <- Publish.duplicate(email, pass, site, title).right
+          url <- Publish(body, email, pass, siteId, title, name).right
         } yield {
-          Publish.duplicate(email, pass, site, title)().toLeft {
-            Publish(body, email, pass, siteId, title, name)().right.map {
-              url =>
-                unfiltered.util.Browser.open(url)
-                "Published %s\n-> %s".format(title, url)
-            }
-          }
+          unfiltered.util.Browser.open(url)
+          "Published %s\n-> %s".format(title, url)
         }
-        nested.joinRight.joinRight
+        promised()
       case Array("--version") =>
         Right("herald is ready to go")
       case _ =>
