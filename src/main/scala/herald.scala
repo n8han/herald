@@ -132,10 +132,10 @@ object Herald {
     val either = args match {
       case Array("--publish") =>
         val promised = for {
-          body <- Promise.of(bodyContent).right
-          title <- Promise.of(title).right
-          email <- Promise.of(posterousEmail).right
-          pass <- Promise.of(posterousPassword).right
+          body <- Promise(bodyContent).right
+          title <- Promise(title).right
+          email <- Promise(posterousEmail).right
+          pass <- Promise(posterousPassword).right
           _ <- Publish.duplicate(email, pass, site, title).right
           url <- Publish(body, email, pass, siteId, title, name).right
         } yield {
