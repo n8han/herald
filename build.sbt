@@ -15,7 +15,7 @@ description :=
 libraryDependencies ++= Seq(
                     "com.tristanhunt" %% "knockoff" % "0.8.0-16",
                     "net.databinder" %% "unfiltered-netty-server" % "0.6.0",
-                    "net.databinder.dispatch" %% "core" % "0.9.0-alpha2",
+                    "net.databinder.dispatch" %% "core" % "0.9.0-alpha3",
                     "org.slf4j" % "slf4j-jdk14" % "1.6.2"
 )
 
@@ -45,4 +45,4 @@ pomExtra := (
   </developers>)
 
 
-seq(lsSettings :_*)
+//seq(lsSettings :_*)
