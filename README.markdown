@@ -89,4 +89,4 @@ published URL is displayed and will open in the default broswer.
 [Dispatch]: http://dispatch.databinder.net/
 [implicit.ly]: http://implicit.ly/
 [plugins]: http://code.google.com/p/simple-build-tool/wiki/SbtPlugins
-[message]: mailto:nathan@technically.us?subject=Requesting+implicit.ly+publishing+rights
+[message]: mailto:nathan@technically.us?subject=Requesting%20implicit.ly%20publishing%20rights
