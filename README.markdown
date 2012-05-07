@@ -57,8 +57,8 @@ Publication Target Site
 
 This plugin comes preconfigured to publish to [implicit.ly]. To be
 added as a contributor to implicit.ly,
-[send n8han a message on github][message] **containing your email
-address** and a link to your Scala project if it isn't on github.
+[send n8han an email][message] with a link to your Scala project 
+if it isn't on github.
 
 Configuring Credentials
 -----------------------
@@ -89,4 +89,4 @@ published URL is displayed and will open in the default broswer.
 [Dispatch]: http://dispatch.databinder.net/
 [implicit.ly]: http://implicit.ly/
 [plugins]: http://code.google.com/p/simple-build-tool/wiki/SbtPlugins
-[message]: http://github.com/inbox/new/n8han
+[message]: mailto:nathan@technically.us?subject=Requesting+implicit.ly+publishing+rights
