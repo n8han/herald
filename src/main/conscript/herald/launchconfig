@@ -8,4 +8,4 @@
 [repositories]
   local
   maven-central
-  scala-tools-releases
+  sonatype-releases: https://oss.sonatype.org/service/local/repositories/releases/content/
