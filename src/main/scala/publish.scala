@@ -3,14 +3,17 @@ package herald
 import dispatch._
 
 import scala.xml.{XML,Source}
+
+import com.ning.http.client.oauth.RequestToken
+
 object Publish {
   def apply(body: Seq[xml.Node],
-            email: String,
-            password: String,
+            accessToken: RequestToken,
             siteId: Int,
             title: String,
             name: String): Promise[Either[String, String]] = {
-    val source = <a href="http://github.com/n8han/herald">herald</a>
+sys.error("not defined")
+/*    val source = <a href="http://github.com/n8han/herald">herald</a>
     for (eth <- 
       Http(posterousApi(email, password) / "newpost" << Map(
         "site_id" -> siteId.toString,
@@ -27,7 +30,7 @@ object Publish {
           Left("No post URL found in response: " + xml)
         }
       }
-    }
+    }*/
   }
   def httperror(t: Throwable) =
     "Error communicating with Posterous: " + t.getMessage
@@ -38,7 +41,7 @@ object Publish {
 
   /** Check that the current version's notes aren't already posted */
   def duplicate(email: String, pass: String, site: String, title: String)
-  : PromiseEither[String,String] = {
+  : Promise[Either[String,String]] = {
     val posting = :/(site) / title.replace(" ", "-").replace(".", "")
     Http(posting.HEAD > asStatus).either.map {
       _.fold(

@@ -7,11 +7,11 @@ import com.tristanhunt.knockoff.DefaultDiscounter._
 import scala.xml.{NodeSeq,Node}
 
 object Herald {
-  def posterousCredentialsPath = 
-    file(new File(System.getProperty("user.home")), ".posterous")
+  def heraldCredentialsPath = 
+    file(new File(System.getProperty("user.home")), ".herald")
 
-  lazy val posterousProperties =
-    posterousCredentialsPath.right.map { file =>
+  def heraldProperties =
+    heraldCredentialsPath.right.map { file =>
       val props = new java.util.Properties
       val is = new FileInputStream(file)
       props.load(is)
@@ -19,17 +19,20 @@ object Herald {
       props
     }
 
-  def posterousProperty(name: String) =
-    posterousProperties.right.flatMap { p =>
+  def heraldProperty(name: String) =
+    heraldProperties.right.flatMap { p =>
       Option(p.getProperty(name)).toRight {
         "Required property %s not found in file %s".format(
-          name, posterousCredentialsPath
+          name, heraldCredentialsPath
         )
       }
     }
 
-  def posterousEmail = posterousProperty("email")
-  def posterousPassword = posterousProperty("password")
+  def accessToken = 
+    for {
+      token <- heraldProperty("oauth_token").right
+      secret <- heraldProperty("oauth_token_secret").right
+    } yield new com.ning.http.client.oauth.RequestToken(token,secret)
 
   def file(parent: File, child: String) =
     Some(new File(parent, child)).filter { _.exists }.toRight {
@@ -134,10 +137,9 @@ object Herald {
         val promised = for {
           body <- Promise(bodyContent).right
           title <- Promise(title).right
-          email <- Promise(posterousEmail).right
-          pass <- Promise(posterousPassword).right
-          _ <- Publish.duplicate(email, pass, site, title).right
-          url <- Publish(body, email, pass, siteId, title, name).right
+          token <- Promise(accessToken).right
+//          _ <- Publish.duplicate(email, pass, site, title).right
+          url <- Publish(body, token, siteId, title, name).right
         } yield {
           unfiltered.util.Browser.open(url)
           "Published %s\n-> %s".format(title, url)
