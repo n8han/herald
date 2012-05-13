@@ -4,3 +4,4 @@ project/boot/
 lib_managed/
 target/
 .history
+src/main/scala/secret.scala
