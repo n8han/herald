@@ -4,24 +4,20 @@ import dispatch._
 import java.net.URI
 import java.io.{File,FileInputStream}
 import com.tristanhunt.knockoff.DefaultDiscounter._
+import org.streum.configrity._
 import scala.xml.{NodeSeq,Node}
-
+import scala.util.control.Exception.allCatch
 object Herald {
-  def heraldCredentialsPath = 
+  lazy val heraldCredentialsPath = 
     file(new File(System.getProperty("user.home")), ".herald")
 
   def heraldProperties =
-    heraldCredentialsPath.right.map { file =>
-      val props = new java.util.Properties
-      val is = new FileInputStream(file)
-      props.load(is)
-      is.close()
-      props
-    }
+    for (p <- heraldCredentialsPath.right)
+      yield Configuration.load(p.getPath)
 
   def heraldProperty(name: String) =
-    heraldProperties.right.flatMap { p =>
-      Option(p.getProperty(name)).toRight {
+    heraldProperties.right.flatMap { 
+      _.get[String](name).toRight {
         "Required property %s not found in file %s".format(
           name, heraldCredentialsPath
         )
@@ -34,9 +30,14 @@ object Herald {
       secret <- heraldProperty("oauth_token_secret").right
     } yield new com.ning.http.client.oauth.RequestToken(token,secret)
 
+  /** Create file if it doesn't exist */
   def file(parent: File, child: String) =
-    Some(new File(parent, child)).filter { _.exists }.toRight {
-      "Required path %s/%s does not exist".format(parent.toString, child)
+    allCatch.opt { 
+      val f = new File(parent, child)
+      f.createNewFile()
+      f
+    }.toRight {
+      "Config file %s/%s can't be created".format(parent.toString, child)
     }
 
   def dir(parent: File, child: String) =
@@ -50,9 +51,8 @@ object Herald {
       file(d, "%s.%s".format(name, notesExtension))
     }
 
-  /** Posterous site id, defaults to implicit.ly */
-  def siteId = 1031779
-  def site = "implicit.ly"
+  /** Tumblr host name for notes.implicit.ly */
+  def tumblrHostname = "implicitly-notes"
 
   def base = new File(".").getCanonicalFile
 
@@ -139,7 +139,7 @@ object Herald {
           title <- Promise(title).right
           token <- Promise(accessToken).right
 //          _ <- Publish.duplicate(email, pass, site, title).right
-          url <- Publish(body, token, siteId, title, name).right
+          url <- Publish(body, token, tumblrHostname, title, name).right
         } yield {
           unfiltered.util.Browser.open(url)
           "Published %s\n-> %s".format(title, url)

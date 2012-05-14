@@ -1,41 +1,33 @@
 package herald
 
 import dispatch._
+import oauth._
 
 import scala.xml.{XML,Source}
 
-import com.ning.http.client.oauth.RequestToken
+import com.ning.http.client.oauth.{RequestToken,ConsumerKey}
 
-object Publish {
+object Publish extends HeraldConsumer {
   def apply(body: Seq[xml.Node],
             accessToken: RequestToken,
-            siteId: Int,
+            tumblrHostname: String,
             title: String,
             name: String): Promise[Either[String, String]] = {
-sys.error("not defined")
-/*    val source = <a href="http://github.com/n8han/herald">herald</a>
+    val source = <a href="http://github.com/n8han/herald">herald</a>
     for (eth <- 
-      Http(posterousApi(email, password) / "newpost" << Map(
-        "site_id" -> siteId.toString,
+      Http(tumblrApi(tumblrHostname) / "post" << Map(
+        "type" -> "text",
         "title" -> title,
         "tags" -> name,
         "body" -> body.mkString,
         "source" -> source.toString
-      ) > asXml).either
+      ) <@ (consumer, accessToken) > As.string).either
     ) yield {
-      eth.left.map(httperror).right.flatMap { xml =>
-        (xml \ "post" \ "url").map {
-          nd => Right(nd.text)
-        }.headOption.getOrElse {
-          Left("No post URL found in response: " + xml)
-        }
-      }
-    }*/
+      eth.left.map(httperror)
+    }
   }
   def httperror(t: Throwable) =
-    "Error communicating with Posterous: " + t.getMessage
-
-  def asXml = As.string.andThen { str => XML.load(Source.fromString(str)) }
+    "Error communicating with Tumblr: " + t.getMessage
 
   def asStatus = new FunctionHandler( _.getStatusCode )
 
@@ -57,6 +49,6 @@ sys.error("not defined")
     }
   }
 
-  def posterousApi(email: String, password:String) =
-    host("posterous.com").secure / "api" as (email, password)
+  def tumblrApi(baseHostname: String) =
+    host("api.tumblr.com") / "v2" / "blog" / baseHostname
 }
