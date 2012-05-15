@@ -9,14 +9,29 @@ import com.ning.http.client.oauth.{RequestToken,ConsumerKey}
 import net.liftweb.json._
 
 object Publish extends HeraldConsumer {
+  def allowed(accessToken: RequestToken, tumblrName: String) =
+    Http(
+      tumblrApi / "user" / "info" <@ (consumer, accessToken) OK LiftJson.As
+    ).either.left.map {
+      "Error checking user info: " + _.getMessage
+    }.right.map { js =>
+      (for {
+        JField("response", JObject(response)) <- js
+        JField("user", JObject(user)) <- response
+        JField("blogs", JArray(blogs)) <- user
+        JObject(blog) <- blogs
+        JField("name", JString(name)) <- blog
+      } yield name).contains(tumblrName)
+    }
+
   def apply(body: Seq[xml.Node],
             accessToken: RequestToken,
-            tumblrHostname: String,
+            hostname: String,
             title: String,
             name: String): Promise[Either[String, String]] = {
     val source = <a href="http://github.com/n8han/herald">herald</a>
 
-    Http(tumblrApi(tumblrHostname) / "post" << Map(
+    Http(tumblrApi / "blog" / hostname / "post" << Map(
       "type" -> "text",
       "title" -> title,
       "tags" -> name,
@@ -28,9 +43,9 @@ object Publish extends HeraldConsumer {
       eth.right.flatMap { js =>
         (for {
           JField("response", JObject(response)) <- js
-          JField("id",JInt(id)) <- response
+          JField("id", JInt(id)) <- response
         } yield {
-          "http://%s/post/%s".format(tumblrHostname, id)
+          "http://%s/post/%s".format(hostname, id)
         }).headOption.toRight { "unable to find id in post response" }
       }
     }
@@ -58,6 +73,6 @@ object Publish extends HeraldConsumer {
     }
   }
 
-  def tumblrApi(baseHostname: String) =
-    host("api.tumblr.com") / "v2" / "blog" / baseHostname
+  def tumblrApi =
+    host("api.tumblr.com") / "v2"
 }

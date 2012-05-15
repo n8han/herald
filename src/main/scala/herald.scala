@@ -8,7 +8,7 @@ import org.streum.configrity._
 import scala.xml.{NodeSeq,Node}
 import scala.util.control.Exception.allCatch
 object Herald {
-  lazy val heraldCredentialsPath = 
+  def heraldCredentialsPath = 
     file(new File(System.getProperty("user.home")), ".herald")
 
   def heraldProperties =
@@ -50,9 +50,10 @@ object Herald {
     notesDirectory.right.flatMap { d =>
       file(d, "%s.%s".format(name, notesExtension))
     }
-
+  def adminEmail = "nathan@technically.us"
+  def tumblrName = "implicitly-notes"
   /** Tumblr host name for notes.implicit.ly */
-  def tumblrHostname = "notes.implicit.ly"
+  def tumblrHostname = tumblrName + ".tumblr.com"
 
   def base = new File(".").getCanonicalFile
 

@@ -5,6 +5,8 @@ import unfiltered.response._
 
 import com.ning.http.client.oauth.RequestToken
 
+import dispatch.Promise
+
 object Preview {
   private var requestToken = Option.empty[RequestToken]
   def apply(body: => Either[String,Seq[xml.Node]],
@@ -48,15 +50,20 @@ object Preview {
                 )
               },
               { accessToken =>
-                foldError(for {
+                (for {
                   bodyXml <- body.right
                   title <- Herald.title.right
-                  url <- Publish(bodyXml,
-                                 accessToken,
-                                 Herald.tumblrHostname,
-                                 title,
-                                 Herald.name)().right
-                } yield Redirect(url))
+                } yield for {
+                  _ <- allowedResponse(accessToken,
+                                       Herald.tumblrName).right
+                  url <- errorMap(Publish(bodyXml,
+                                          accessToken,
+                                          Herald.tumblrHostname,
+                                          title,
+                                          Herald.name)).right
+                } yield Redirect(url)).left.map(
+                  serverError
+                ).right.map { _() }.joinRight.fold(identity,identity)
               }
             )
           case _ => Pass
@@ -68,12 +75,31 @@ object Preview {
       )
       println("\nPreviewing notes. Press CTRL+C to stop.")
     }
-    def foldError[R <: ResponseFunction[Any]](eth: Either[String,R]) =
-      eth.fold(
-        err => InternalServerError ~> ResponseString(err),
-        identity
-      )
   }
+
+  def errorMap[R](eth: Promise[Either[String, R]]) =
+    eth.left.map(serverError)
+  def serverError(err: String) =
+    InternalServerError ~> ResponseString(err)
+  def foldError[R <: ResponseFunction[Any]](eth: Either[String,R]) =
+    eth.fold(serverError, identity)
+
+  def allowedResponse(accessToken: RequestToken, tumblrName: String) =
+    errorMap(
+      Publish.allowed(accessToken, tumblrName)
+    ).map { _.right.flatMap { allowed =>
+      if (allowed) Right(true)
+      else Left(
+        Html(
+          <html>
+          <p>You aren't authorized to publish to {tumblrName} yet.</p>
+          <p><a href={
+            "http://%s.tumblr.com/ask".format(tumblrName)
+          }>Ask for membership</a>.</p>
+          </html>
+        )
+      )
+    } }
 
   def previewContent(bodyContent: Either[String, Seq[xml.Node]],
                      title: Either[String, String]) = 
