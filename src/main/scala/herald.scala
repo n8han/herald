@@ -52,7 +52,7 @@ object Herald {
     }
 
   /** Tumblr host name for notes.implicit.ly */
-  def tumblrHostname = "implicitly-notes"
+  def tumblrHostname = "notes.implicit.ly"
 
   def base = new File(".").getCanonicalFile
 

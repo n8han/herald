@@ -48,7 +48,15 @@ object Preview {
                 )
               },
               { accessToken =>
-                NotImplemented
+                foldError(for {
+                  bodyXml <- body.right
+                  title <- Herald.title.right
+                  url <- Publish(bodyXml,
+                                 accessToken,
+                                 Herald.tumblrHostname,
+                                 title,
+                                 Herald.name)().right
+                } yield Redirect(url))
               }
             )
           case _ => Pass

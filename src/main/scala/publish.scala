@@ -6,6 +6,7 @@ import oauth._
 import scala.xml.{XML,Source}
 
 import com.ning.http.client.oauth.{RequestToken,ConsumerKey}
+import net.liftweb.json._
 
 object Publish extends HeraldConsumer {
   def apply(body: Seq[xml.Node],
@@ -14,16 +15,24 @@ object Publish extends HeraldConsumer {
             title: String,
             name: String): Promise[Either[String, String]] = {
     val source = <a href="http://github.com/n8han/herald">herald</a>
-    for (eth <- 
-      Http(tumblrApi(tumblrHostname) / "post" << Map(
-        "type" -> "text",
-        "title" -> title,
-        "tags" -> name,
-        "body" -> body.mkString,
-        "source" -> source.toString
-      ) <@ (consumer, accessToken) > As.string).either
-    ) yield {
-      eth.left.map(httperror)
+
+    Http(tumblrApi(tumblrHostname) / "post" << Map(
+      "type" -> "text",
+      "title" -> title,
+      "tags" -> name,
+      "body" -> body.mkString,
+      "source" -> source.toString
+    ) <@ (consumer, accessToken) OK LiftJson.As).either.left.map {
+      "Error posting to Tumblr: " + _.getMessage
+    }.map { eth =>
+      eth.right.flatMap { js =>
+        (for {
+          JField("response", JObject(response)) <- js
+          JField("id",JInt(id)) <- response
+        } yield {
+          "http://%s/post/%s".format(tumblrHostname, id)
+        }).headOption.toRight { "unable to find id in post response" }
+      }
     }
   }
   def httperror(t: Throwable) =
