@@ -92,10 +92,12 @@ object Preview {
       else Left(
         Html(
           <html>
-          <p>You aren't authorized to publish to {tumblrName} yet.</p>
+          <p>This account is not yet allowed to post to {tumblrName}.</p>
           <p><a href={
-            "http://%s.tumblr.com/ask".format(tumblrName)
-          }>Ask for membership</a>.</p>
+            "mailto:%s?subject=implicit.ly%%20invite".format(
+              Herald.adminEmail)
+          }>Request an invite</a>, with a link to one or two
+          of your Scala projects.</p>
           </html>
         )
       )
