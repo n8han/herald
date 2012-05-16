@@ -14,8 +14,10 @@ description :=
 
 libraryDependencies ++= Seq(
                     "com.tristanhunt" %% "knockoff" % "0.8.0-16",
-                    "net.databinder" %% "unfiltered-netty-server" % "0.6.0",
-                    "net.databinder.dispatch" %% "core" % "0.9.0-alpha4",
+                    "net.databinder" %% "unfiltered-netty-server" % "0.6.2",
+                    "net.liftweb" %% "lift-json" % "2.4",
+                    "net.databinder.dispatch" %% "core" % "0.9.0-alpha6",
+                    "org.streum" %% "configrity-core" % "0.10.1",
                     "org.slf4j" % "slf4j-jdk14" % "1.6.2"
 )
 
