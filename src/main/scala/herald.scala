@@ -16,13 +16,15 @@ object Herald {
       yield Configuration.load(p.getPath)
 
   def heraldProperty(name: String) =
-    heraldProperties.right.flatMap { 
-      _.get[String](name).toRight {
+    for {
+      path <- heraldCredentialsPath.right
+      props <- heraldProperties.right
+      prop <- props.get[String](name).toRight {
         "Required property %s not found in file %s".format(
-          name, heraldCredentialsPath
+          name, path
         )
-      }
-    }
+      }.right
+    } yield prop
 
   def accessToken = 
     for {
