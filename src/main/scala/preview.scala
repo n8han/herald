@@ -16,65 +16,75 @@ object Preview {
         val auth = new Auth("http://%s%s".format(host, req.uri))
         req match {
           case GET(Path(Seg(Nil))) & Params(Verifier(verifier)) =>
-            val access = requestToken.toRight {
-              "Unexpected state, start over and try again"
-            }.right.map { tok =>
-              auth.fetchAccessToken(tok, verifier)()
-            }.joinRight
-            foldError(for {
-              accessToken <- access.right
-              props <- Herald.heraldProperties.right
-              path <- Herald.heraldCredentialsPath.right
-            } yield {
-              props
-                .set("oauth_token", accessToken.getKey)
-                .set("oauth_token_secret", accessToken.getSecret)
-                .save(path)
-              Redirect("/")
-            })
+            completeExchange(auth, verifier)
+
           case GET(Path(Seg(Nil))) =>
             foldError(
               for (html <- previewContent(body, title).right)
                 yield Html(html)
             )
+
           case POST(Path(Seg(Nil))) =>
-            val token = Herald.accessToken
-            token.fold(
-              { _ =>
-                auth.fetchRequestToken().fold(
-                  err => ServiceUnavailable ~> ResponseString(err),
-                  tok => {
-                    requestToken = Some(tok)
-                    Redirect(auth.signedAuthorize(tok))
-                  }
-                )
-              },
-              { accessToken =>
-                (for {
-                  bodyXml <- body.right
-                  title <- Herald.title.right
-                } yield for {
-                  _ <- allowedResponse(accessToken,
-                                       Herald.tumblrName).right
-                  url <- errorMap(Publish(bodyXml,
-                                          accessToken,
-                                          Herald.tumblrHostname,
-                                          title,
-                                          Herald.name)).right
-                } yield Redirect(url)).left.map(
-                  serverError
-                ).right.map { _() }.joinRight.fold(identity,identity)
-              }
+            Herald.accessToken.fold(
+              _ => startExchange(auth),
+              tok => publish(body, auth, tok)
             )
+
           case _ => Pass
         }
-      case _ => Pass
     }).run { server =>
       unfiltered.util.Browser.open(
         "http://127.0.0.1:%d/".format(server.port)
       )
       println("\nPreviewing notes. Press CTRL+C to stop.")
     }
+  }
+
+  def startExchange(auth: Auth) =
+    auth.fetchRequestToken().fold(
+      err => ServiceUnavailable ~> ResponseString(err),
+      tok => {
+        requestToken = Some(tok)
+        Redirect(auth.signedAuthorize(tok))
+      }
+    )
+
+  def completeExchange(auth: Auth, verifier: String) = {
+    val access = requestToken.toRight {
+      "Unexpected state, start over and try again"
+    }.right.map { tok =>
+      auth.fetchAccessToken(tok, verifier)()
+    }.joinRight
+    foldError(for {
+      accessToken <- access.right
+      props <- Herald.heraldProperties.right
+      path <- Herald.heraldCredentialsPath.right
+    } yield {
+      props
+        .set("oauth_token", accessToken.getKey)
+        .set("oauth_token_secret", accessToken.getSecret)
+        .save(path)
+      Redirect("/")
+    })
+  }
+
+  def publish(body: Either[String,Seq[xml.Node]],
+              auth: Auth,
+              accessToken: RequestToken) = {
+    (for {
+      bodyXml <- body.right
+      title <- Herald.title.right
+    } yield for {
+      _ <- allowedResponse(accessToken,
+                           Herald.tumblrName).right
+      url <- errorMap(Publish(bodyXml,
+                              accessToken,
+                              Herald.tumblrHostname,
+                              title,
+                              Herald.name)).right
+    } yield Redirect(url)).left.map(
+      serverError
+    ).right.map { _() }.joinRight.fold(identity,identity)
   }
 
   def errorMap[R](eth: Promise[Either[String, R]]) =
