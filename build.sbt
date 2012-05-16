@@ -4,7 +4,7 @@ name := "herald-app"
 
 organization := "net.databinder.herald"
 
-version := "0.4.1"
+version := "0.5.0"
 
 homepage := Some(url("https://github.com/n8han/herald"))
 
