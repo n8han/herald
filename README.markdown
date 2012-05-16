@@ -83,9 +83,7 @@ from the preview browser, or from the command line.
 If the release notes publication is successful, the published URL will
 open in the default broswer.
 
-[posterous-sbt]: http://github.com/n8han/posterous-sbt
 [simple-build-tool]: https://github.com/harrah/xsbt/wiki
-[Posterous]: http://posterous.com/
 [Knockoff]: http://tristanhunt.com/projects/knockoff/
 [Dispatch]: http://dispatch.databinder.net/
 [notes.implicit.ly]: http://notes.implicit.ly/
