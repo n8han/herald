@@ -1,0 +1,35 @@
+Tumblr Integration
+------------------
+
+This version of Herald is ported to use the Tumblr API for posting and
+is configured to publish to [notes.implicit.ly][notes] by default. The
+"notes" subdomain is the new home of implicit.ly release notes and
+redirects are in place.
+
+Upgrade and Authorization
+-------------------------
+
+You can upgrade Herald with Conscript, as usual:
+
+    cs n8han/herald
+
+Before publishing to notes.implicit.ly you'll need to authenticate
+with a Tumblr account that is a member of the new
+blog. [Send an email][nathan] requesting membership; if you had an
+account with the Posterous blog you'll be added right away. Otherwise,
+please include a link to a Scala project or two.
+
+Herald authorizes directly with Tumblr so that you don't need to enter
+any credentials. Run `herald` in any project directory with a `notes`
+directory and click "Authorize with Tumblr" in the browser window that
+opens. Approve Herald to access a signed in Tumblr account, then you
+can publish also from the preview browser. (The `--publish` command
+line flag also works, once you have authorized.)
+
+[nathan]: mailto:nathan@technically.us?subject=implicit.ly%20migration
+[notes]: http://notes.implicit.ly/
+
+Your authorization credentials are saved in `~/.herald` and may be
+revoked at any time in your [Tumblr preferences][pref].
+
+[pref]: https://www.tumblr.com/preferences
