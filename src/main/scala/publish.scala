@@ -36,7 +36,7 @@ object Publish extends HeraldConsumer {
       "title" -> title,
       "tags" -> name,
       "body" -> body.mkString,
-      "source" -> source.toString
+      "source" -> source.toString // isn't doing anything!
     ) <@ (consumer, accessToken) OK LiftJson.As).either.left.map {
       "Error posting to Tumblr: " + _.getMessage
     }.map { eth =>

@@ -89,3 +89,12 @@ open in the default broswer.
 [notes.implicit.ly]: http://notes.implicit.ly/
 [plugins]: http://code.google.com/p/simple-build-tool/wiki/SbtPlugins
 [message]: mailto:nathan@technically.us?subject=Requesting%20implicit.ly%20publishing%20rights
+
+
+Building herald
+---------------
+
+If you try to build herald from source you'll get a compilation error;
+the source file containing our Tumblr consumer keys is gitignored. If
+you want to contribute or just play around with the source, open an
+issue for this.
