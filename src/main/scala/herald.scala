@@ -150,6 +150,10 @@ object Herald {
         promised()
       case Array("--version") =>
         Right("herald is ready to go")
+      case Array("--help") =>
+        Right("""Usage: herald [--publish]
+                |With no parameters, herald opens a preview browser."""
+              .stripMargin)
       case _ =>
         for {
           _ <- bodyContent.right
