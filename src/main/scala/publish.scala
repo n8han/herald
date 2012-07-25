@@ -11,7 +11,7 @@ import net.liftweb.json._
 object Publish extends HeraldConsumer {
   def allowed(accessToken: RequestToken, tumblrName: String) =
     Http(
-      tumblrApi / "user" / "info" <@ (consumer, accessToken) OK LiftJson.As
+      tumblrApi / "user" / "info" <@ (consumer, accessToken) OK as.JValue
     ).either.left.map {
       "Error checking user info: " + _.getMessage
     }.right.map { js =>
@@ -37,7 +37,7 @@ object Publish extends HeraldConsumer {
       "tags" -> name,
       "body" -> body.mkString,
       "source" -> source.toString // isn't doing anything!
-    ) <@ (consumer, accessToken) OK LiftJson.As).either.left.map {
+    ) <@ (consumer, accessToken) OK as.JValue).either.left.map {
       "Error posting to Tumblr: " + _.getMessage
     }.map { eth =>
       eth.right.flatMap { js =>
